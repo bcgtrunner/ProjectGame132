@@ -5,6 +5,7 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField] private Vector3 _wallTouchingSideLocalNormal = Vector3.down;
     [SerializeField] private float _flySpeed = 10f;
+    [SerializeField] private float _launchClearance = 0.1f;
 
     private enum PlayerState { Attached, Flying }
 
@@ -42,8 +43,16 @@ public class PlayerController : MonoBehaviour
         if (_actions.UI.Click.WasPressedThisFrame())
         {
             _flyingDirection = Camera.main.transform.forward;
-            // Push off slightly to avoid immediately re-colliding with the current wall
-            transform.position += _flyingDirection * 0.1f;
+
+            // If the player is aiming back into the wall they're attached to,
+            // remain attached instead of trying to launch through the surface.
+            if (Vector3.Dot(_flyingDirection, -CurrentSurfaceNormal.normalized) > 0f)
+            {
+                return;
+            }
+
+            // Move slightly away from the surface before flight starts so we don't begin inside the attached wall.
+            transform.position += CurrentSurfaceNormal.normalized * _launchClearance;
             _attachedWallCollider = null;
             _state = PlayerState.Flying;
         }
@@ -53,11 +62,11 @@ public class PlayerController : MonoBehaviour
     {
         float moveDistance = _flySpeed * Time.deltaTime;
 
-        // SphereCast from just ahead of the player to avoid hitting our own collider,
-        // using the player's approximate radius so we detect walls before passing through them.
+        // Cast from the player's current position so nearby walls are still detected
+        // even when the player launches while facing the surface they are attached to.
         float sphereRadius = GetProjectedHalfExtent(transform.rotation, _flyingDirection) * 0.9f;
-        Vector3 castOrigin = transform.position + _flyingDirection * (sphereRadius + 0.05f);
-        float castDistance = moveDistance;
+        Vector3 castOrigin = transform.position;
+        float castDistance = moveDistance + sphereRadius + _launchClearance;
 
         if (Physics.SphereCast(castOrigin, sphereRadius, _flyingDirection, out RaycastHit hit, castDistance))
         {
