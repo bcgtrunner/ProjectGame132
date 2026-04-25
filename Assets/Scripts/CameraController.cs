@@ -3,7 +3,7 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     [SerializeField] private PlayerController _playerController;
-    [SerializeField] private float _rotationSensitivity = 0.15f;
+    [SerializeField] private float _rotationSensitivity = 0.3f;
     [SerializeField] private float _minPitch = -80f;
     [SerializeField] private float _maxPitch = 80f;
 
@@ -76,12 +76,8 @@ public class CameraController : MonoBehaviour
             _pitch = Mathf.Clamp(_pitch - lookDelta.y * _rotationSensitivity, _minPitch, _maxPitch);
         }
 
-        Quaternion yawRotation = Quaternion.AngleAxis(_yaw, Vector3.up);
-        Vector3 pitchAxis = yawRotation * Vector3.right;
-        Quaternion pitchRotation = Quaternion.AngleAxis(_pitch, pitchAxis);
-
         transform.localPosition = Vector3.zero;
-        transform.localRotation = _baseLocalRotation * yawRotation * pitchRotation;
+        transform.localRotation = _baseLocalRotation * Quaternion.Euler(_pitch, _yaw, 0f);
     }
 
     private void HandlePlayerTeleported(Vector3 surfaceNormal)
