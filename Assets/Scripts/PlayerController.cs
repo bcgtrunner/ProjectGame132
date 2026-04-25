@@ -54,10 +54,10 @@ public class PlayerController : MonoBehaviour
         float moveDistance = _flySpeed * Time.deltaTime;
         Vector3 newPosition = transform.position + _flyingDirection * moveDistance;
 
-        // Check for wall collision ahead
+        // Check for wall collision ahead — only attach to objects with the Wall component
         if (Physics.Raycast(transform.position, _flyingDirection, out RaycastHit hit, moveDistance + 1f))
         {
-            if (hit.collider != _attachedWallCollider)
+            if (hit.collider.TryGetComponent<Wall>(out _) && hit.collider != _attachedWallCollider)
             {
                 TeleportToSurface(hit);
                 _attachedWallCollider = hit.collider;
