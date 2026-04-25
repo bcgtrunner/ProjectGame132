@@ -6,11 +6,13 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float _rotationSensitivity = 0.3f;
     [SerializeField] private float _minPitch = -80f;
     [SerializeField] private float _maxPitch = 80f;
+    [SerializeField] private float _attachSmoothingSpeed = 8f;
 
     private InputSystem_Actions _actions;
     private float _yaw;
     private float _pitch;
     private Quaternion _baseLocalRotation;
+    private Quaternion _targetBaseLocalRotation;
     private Transform _playerTransform;
     private Camera _camera;
 
@@ -72,6 +74,9 @@ public class CameraController : MonoBehaviour
             return;
         }
 
+        // Smoothly interpolate base rotation toward target
+        _baseLocalRotation = Quaternion.Slerp(_baseLocalRotation, _targetBaseLocalRotation, _attachSmoothingSpeed * Time.deltaTime);
+
         Vector2 lookDelta = _actions.Player.Look.ReadValue<Vector2>();
         _yaw += lookDelta.x * _rotationSensitivity;
         _pitch = Mathf.Clamp(_pitch - lookDelta.y * _rotationSensitivity, _minPitch, _maxPitch);
@@ -90,7 +95,7 @@ public class CameraController : MonoBehaviour
             localUpReference = Vector3.forward;
         }
 
-        _baseLocalRotation = Quaternion.LookRotation(localAwayFromWall, localUpReference);
+        _targetBaseLocalRotation = Quaternion.LookRotation(localAwayFromWall, localUpReference);
         _yaw = 0f;
         _pitch = 0f;
     }
