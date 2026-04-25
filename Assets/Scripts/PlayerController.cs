@@ -4,11 +4,17 @@ using System;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private Vector3 _wallTouchingSideLocalNormal = Vector3.down;
+    [SerializeField] private float _flySpeed = 10f;
+
+    private enum PlayerState { Attached, Flying }
 
     private InputSystem_Actions _actions;
     private Collider _playerCollider;
+    private PlayerState _state = PlayerState.Attached;
+    private Vector3 _flyingDirection;
+    private Collider _attachedWallCollider;
 
-    public event Action<Vector3> Teleported;
+    public event Action<Vector3> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
 
     private void Awake()
@@ -20,26 +26,52 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        if (_actions.UI.Click.WasPressedThisFrame())
+        switch (_state)
         {
-            Vector2 clickPoint = _actions.UI.Point.ReadValue<Vector2>();
-            Ray ray = Camera.main.ScreenPointToRay(clickPoint);
-
-            if (Physics.Raycast(ray, out RaycastHit hit, 300f))
-            {
-                TeleportToSurface(hit);
-            }
+            case PlayerState.Attached:
+                UpdateAttached();
+                break;
+            case PlayerState.Flying:
+                UpdateFlying();
+                break;
         }
     }
 
-    public void TeleportToSurface(RaycastHit hit)
+    private void UpdateAttached()
     {
-        TeleportToSurface(hit.point, hit.normal, hit.collider);
+        if (_actions.UI.Click.WasPressedThisFrame())
+        {
+            _flyingDirection = Camera.main.transform.forward;
+            // Push off slightly to avoid immediately re-colliding with the current wall
+            transform.position += _flyingDirection * 0.1f;
+            _attachedWallCollider = null;
+            _state = PlayerState.Flying;
+        }
     }
 
-    public void TeleportToSurface(Vector3 targetPosition, Vector3 surfaceNormal)
+    private void UpdateFlying()
     {
-        TeleportToSurface(targetPosition, surfaceNormal, null);
+        float moveDistance = _flySpeed * Time.deltaTime;
+        Vector3 newPosition = transform.position + _flyingDirection * moveDistance;
+
+        // Check for wall collision ahead
+        if (Physics.Raycast(transform.position, _flyingDirection, out RaycastHit hit, moveDistance + 1f))
+        {
+            if (hit.collider != _attachedWallCollider)
+            {
+                TeleportToSurface(hit);
+                _attachedWallCollider = hit.collider;
+                _state = PlayerState.Attached;
+                return;
+            }
+        }
+
+        transform.position = newPosition;
+    }
+
+    private void TeleportToSurface(RaycastHit hit)
+    {
+        TeleportToSurface(hit.point, hit.normal, hit.collider);
     }
 
     private void TeleportToSurface(Vector3 targetPosition, Vector3 surfaceNormal, Collider hitCollider)
@@ -55,7 +87,7 @@ public class PlayerController : MonoBehaviour
         transform.position = adjustedTargetPosition - GetWorldOffsetToTouchingFace(localFaceNormal, targetRotation);
 
         CurrentSurfaceNormal = surfaceNormal;
-        Teleported?.Invoke(surfaceNormal);
+        AttachedToWall?.Invoke(surfaceNormal);
     }
 
     private Vector3 GetSafeSurfacePoint(Vector3 targetPosition, Vector3 surfaceNormal, Quaternion targetRotation, Collider hitCollider)

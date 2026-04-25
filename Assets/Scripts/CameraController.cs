@@ -23,8 +23,11 @@ public class CameraController : MonoBehaviour
 
         if (_playerController == null)
         {
-            _playerController = FindFirstObjectByType<PlayerController>();
+            _playerController = FindAnyObjectByType<PlayerController>();
         }
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     public void AssignPlayerController(PlayerController playerController)
@@ -57,9 +60,9 @@ public class CameraController : MonoBehaviour
             playerRenderer.enabled = false;
         }
 
-        _playerController.Teleported += HandlePlayerTeleported;
+        _playerController.AttachedToWall += HandlePlayerAttachedToWall;
 
-        HandlePlayerTeleported(_playerController.CurrentSurfaceNormal);
+        HandlePlayerAttachedToWall(_playerController.CurrentSurfaceNormal);
     }
 
     private void LateUpdate()
@@ -69,18 +72,15 @@ public class CameraController : MonoBehaviour
             return;
         }
 
-        if (_actions.UI.RightClick.ReadValue<float>() > 0f)
-        {
-            Vector2 lookDelta = _actions.Player.Look.ReadValue<Vector2>();
-            _yaw += lookDelta.x * _rotationSensitivity;
-            _pitch = Mathf.Clamp(_pitch - lookDelta.y * _rotationSensitivity, _minPitch, _maxPitch);
-        }
+        Vector2 lookDelta = _actions.Player.Look.ReadValue<Vector2>();
+        _yaw += lookDelta.x * _rotationSensitivity;
+        _pitch = Mathf.Clamp(_pitch - lookDelta.y * _rotationSensitivity, _minPitch, _maxPitch);
 
         transform.localPosition = Vector3.zero;
         transform.localRotation = _baseLocalRotation * Quaternion.Euler(_pitch, _yaw, 0f);
     }
 
-    private void HandlePlayerTeleported(Vector3 surfaceNormal)
+    private void HandlePlayerAttachedToWall(Vector3 surfaceNormal)
     {
         Vector3 localAwayFromWall = _playerTransform.InverseTransformDirection(surfaceNormal.normalized);
         Vector3 localUpReference = Vector3.up;
@@ -99,7 +99,7 @@ public class CameraController : MonoBehaviour
     {
         if (_playerController != null)
         {
-            _playerController.Teleported -= HandlePlayerTeleported;
+            _playerController.AttachedToWall -= HandlePlayerAttachedToWall;
         }
 
         _actions?.Dispose();
