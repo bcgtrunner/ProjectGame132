@@ -52,12 +52,18 @@ public class PlayerController : MonoBehaviour
     private void UpdateFlying()
     {
         float moveDistance = _flySpeed * Time.deltaTime;
-        Vector3 newPosition = transform.position + _flyingDirection * moveDistance;
 
-        // Check for wall collision ahead — only attach to objects with the Wall component
-        if (Physics.Raycast(transform.position, _flyingDirection, out RaycastHit hit, moveDistance + 1f))
+        // SphereCast from just ahead of the player to avoid hitting our own collider,
+        // using the player's approximate radius so we detect walls before passing through them.
+        float sphereRadius = GetProjectedHalfExtent(transform.rotation, _flyingDirection) * 0.9f;
+        Vector3 castOrigin = transform.position + _flyingDirection * (sphereRadius + 0.05f);
+        float castDistance = moveDistance;
+
+        if (Physics.SphereCast(castOrigin, sphereRadius, _flyingDirection, out RaycastHit hit, castDistance))
         {
-            if (hit.collider.TryGetComponent<Wall>(out _) && hit.collider != _attachedWallCollider)
+            if (hit.collider != _playerCollider &&
+                hit.collider.TryGetComponent<Wall>(out _) &&
+                hit.collider != _attachedWallCollider)
             {
                 TeleportToSurface(hit);
                 _attachedWallCollider = hit.collider;
@@ -66,7 +72,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        transform.position = newPosition;
+        transform.position += _flyingDirection * moveDistance;
     }
 
     private void TeleportToSurface(RaycastHit hit)
