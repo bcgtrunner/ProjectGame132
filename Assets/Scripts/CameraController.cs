@@ -74,6 +74,8 @@ public class CameraController : MonoBehaviour
 
     private float _transitionTime;
 
+    private Quaternion ComposeLocalRotation() => _baseLocalRotation * Quaternion.Euler(_pitch, _yaw, 0f);
+
     private void LateUpdate()
     {
         if (_playerTransform == null)
@@ -92,9 +94,6 @@ public class CameraController : MonoBehaviour
             _yaw = Mathf.Lerp(_startYaw, _targetYaw, t);
             _pitch = Mathf.Lerp(_startPitch, _targetPitch, t);
             _baseLocalRotation = Quaternion.Slerp(_startBaseLocalRotation, _targetBaseLocalRotation, t);
-
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = _baseLocalRotation * Quaternion.Euler(_pitch, _yaw, 0f);
         }
         else
         {
@@ -107,10 +106,10 @@ public class CameraController : MonoBehaviour
 
             _targetYaw = _yaw;
             _targetPitch = _pitch;
-
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = _baseLocalRotation * Quaternion.Euler(_pitch, _yaw, 0f);
         }
+
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = ComposeLocalRotation();
     }
 
     private void HandlePlayerAttachedToWall(Vector3 surfaceNormal)

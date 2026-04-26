@@ -65,7 +65,7 @@ public class PlayerController : MonoBehaviour
 
     private void TryStartFlying()
     {
-        if (!_takeoffCooldown.Over())
+        if (IsTakeoffOnCooldown)
         {
             return;
         }
@@ -168,8 +168,8 @@ public class PlayerController : MonoBehaviour
 
         Transform wallTransform = wallBox.transform;
         Vector3 localSurfaceNormal = wallTransform.InverseTransformDirection(surfaceNormal).normalized;
-        int normalAxis = GetDominantAxis(localSurfaceNormal);
-        float normalSign = Mathf.Sign(GetAxis(localSurfaceNormal, normalAxis));
+        int normalAxis = AxisUtils.GetDominantAxis(localSurfaceNormal);
+        float normalSign = Mathf.Sign(AxisUtils.GetAxis(localSurfaceNormal, normalAxis));
 
         Vector3 localPoint = wallTransform.InverseTransformPoint(targetPosition) - wallBox.center;
         Vector3 wallHalfSize = wallBox.size * 0.5f;
@@ -178,22 +178,22 @@ public class PlayerController : MonoBehaviour
         {
             if (axis == normalAxis)
             {
-                SetAxis(ref localPoint, axis, normalSign * GetAxis(wallHalfSize, axis));
+                AxisUtils.SetAxis(ref localPoint, axis, normalSign * AxisUtils.GetAxis(wallHalfSize, axis));
                 continue;
             }
 
-            Vector3 wallAxisWorld = wallTransform.TransformDirection(GetUnitAxis(axis)).normalized;
-            float wallAxisScale = Mathf.Abs(GetAxis(wallTransform.lossyScale, axis));
+            Vector3 wallAxisWorld = wallTransform.TransformDirection(AxisUtils.GetUnitAxis(axis)).normalized;
+            float wallAxisScale = Mathf.Abs(AxisUtils.GetAxis(wallTransform.lossyScale, axis));
             float inset = wallAxisScale > Mathf.Epsilon
                 ? GetProjectedHalfExtent(targetRotation, wallAxisWorld) / wallAxisScale
                 : 0f;
-            float wallExtent = GetAxis(wallHalfSize, axis);
+            float wallExtent = AxisUtils.GetAxis(wallHalfSize, axis);
             float min = -wallExtent + inset;
             float max = wallExtent - inset;
             float clampedValue = min <= max
-                ? Mathf.Clamp(GetAxis(localPoint, axis), min, max)
+                ? Mathf.Clamp(AxisUtils.GetAxis(localPoint, axis), min, max)
                 : 0f;
-            SetAxis(ref localPoint, axis, clampedValue);
+            AxisUtils.SetAxis(ref localPoint, axis, clampedValue);
         }
 
         return wallTransform.TransformPoint(localPoint + wallBox.center);
@@ -234,54 +234,6 @@ public class PlayerController : MonoBehaviour
         return Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.right)) * halfSize.x
             + Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.up)) * halfSize.y
             + Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.forward)) * halfSize.z;
-    }
-
-    private static int GetDominantAxis(Vector3 vector)
-    {
-        Vector3 absolute = new Vector3(Mathf.Abs(vector.x), Mathf.Abs(vector.y), Mathf.Abs(vector.z));
-
-        if (absolute.x > absolute.y && absolute.x > absolute.z)
-        {
-            return 0;
-        }
-
-        return absolute.y > absolute.z ? 1 : 2;
-    }
-
-    private static Vector3 GetUnitAxis(int axis)
-    {
-        return axis switch
-        {
-            0 => Vector3.right,
-            1 => Vector3.up,
-            _ => Vector3.forward,
-        };
-    }
-
-    private static float GetAxis(Vector3 vector, int axis)
-    {
-        return axis switch
-        {
-            0 => vector.x,
-            1 => vector.y,
-            _ => vector.z,
-        };
-    }
-
-    private static void SetAxis(ref Vector3 vector, int axis, float value)
-    {
-        switch (axis)
-        {
-            case 0:
-                vector.x = value;
-                break;
-            case 1:
-                vector.y = value;
-                break;
-            default:
-                vector.z = value;
-                break;
-        }
     }
 
     private void OnDestroy()
