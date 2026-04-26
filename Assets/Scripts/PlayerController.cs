@@ -1,6 +1,28 @@
 using UnityEngine;
 using System;
 
+public class Cooldown
+{
+    private readonly float _duration;
+    private float _lastReset;
+
+    public Cooldown(float duration)
+    {
+        _duration = duration;
+        _lastReset = -duration;
+    }
+
+    public void Reset()
+    {
+        _lastReset = Time.time;
+    }
+
+    public bool Over()
+    {
+        return Time.time - _lastReset >= _duration;
+    }
+}
+
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private Vector3 _wallTouchingSideLocalNormal = Vector3.down;
@@ -17,6 +39,8 @@ public class PlayerController : MonoBehaviour
 
     public event Action<Vector3> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
+
+    private Cooldown _takeoffCooldown = new(0.5f);
 
     private void Awake()
     {
@@ -38,50 +62,79 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void TryStartFlying()
+    {
+        if (!_takeoffCooldown.Over())
+        {
+            return;
+        }
+        
+        _flyingDirection = Camera.main.transform.forward;
+
+        // If the player is aiming back into the wall they're attached to,
+        // remain attached instead of trying to launch through the surface.
+        if (Vector3.Dot(_flyingDirection, -CurrentSurfaceNormal.normalized) > 0f)
+        {
+            return;
+        }
+
+        StartFlying();
+    }
+
+    private void StartFlying()
+    {
+        _flyingDirection = Camera.main.transform.forward;
+        // Move slightly away from the surface before flight starts so we don't begin inside the attached wall.
+        transform.position += CurrentSurfaceNormal.normalized * _launchClearance;
+        _attachedWallCollider = null;
+        _state = PlayerState.Flying;
+    }
+
     private void UpdateAttached()
     {
         if (_actions.UI.Click.WasPressedThisFrame())
         {
-            _flyingDirection = Camera.main.transform.forward;
-
-            // If the player is aiming back into the wall they're attached to,
-            // remain attached instead of trying to launch through the surface.
-            if (Vector3.Dot(_flyingDirection, -CurrentSurfaceNormal.normalized) > 0f)
-            {
-                return;
-            }
-
-            // Move slightly away from the surface before flight starts so we don't begin inside the attached wall.
-            transform.position += CurrentSurfaceNormal.normalized * _launchClearance;
-            _attachedWallCollider = null;
-            _state = PlayerState.Flying;
+            TryStartFlying();
         }
     }
 
     private void UpdateFlying()
     {
-        float moveDistance = _flySpeed * Time.deltaTime;
-
-        // Cast from the player's current position so nearby walls are still detected
-        // even when the player launches while facing the surface they are attached to.
-        float sphereRadius = GetProjectedHalfExtent(transform.rotation, _flyingDirection) * 0.9f;
-        Vector3 castOrigin = transform.position;
-        float castDistance = moveDistance + sphereRadius + _launchClearance;
-
-        if (Physics.SphereCast(castOrigin, sphereRadius, _flyingDirection, out RaycastHit hit, castDistance))
+        if (TryAttach())
         {
-            if (hit.collider != _playerCollider &&
-                hit.collider.TryGetComponent<Wall>(out _) &&
-                hit.collider != _attachedWallCollider)
-            {
-                TeleportToSurface(hit);
-                _attachedWallCollider = hit.collider;
-                _state = PlayerState.Attached;
-                return;
-            }
+            return;
         }
 
-        transform.position += _flyingDirection * moveDistance;
+        transform.position += _flyingDirection * (_flySpeed * Time.deltaTime);
+    }
+
+    private bool TryAttach()
+    {
+        float sphereRadius = GetProjectedHalfExtent(transform.rotation, _flyingDirection) * 0.9f;
+        float castDistance = _flySpeed * Time.deltaTime + sphereRadius + _launchClearance;
+
+        if (!Physics.SphereCast(transform.position, sphereRadius, _flyingDirection, out RaycastHit hit, castDistance))
+        {
+            return false;
+        }
+
+        if (hit.collider == _playerCollider ||
+            !hit.collider.TryGetComponent<Wall>(out _) ||
+            hit.collider == _attachedWallCollider)
+        {
+            return false;
+        }
+
+        Attach(hit);
+        return true;
+    }
+
+    private void Attach(RaycastHit hit)
+    {
+        _takeoffCooldown.Reset();
+        TeleportToSurface(hit);
+        _attachedWallCollider = hit.collider;
+        _state = PlayerState.Attached;
     }
 
     private void TeleportToSurface(RaycastHit hit)
