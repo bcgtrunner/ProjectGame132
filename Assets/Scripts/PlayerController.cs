@@ -39,6 +39,7 @@ public class PlayerController : MonoBehaviour
 
     public event Action<Vector3> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
+    public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
 
     private Cooldown _takeoffCooldown = new(0.5f);
 
