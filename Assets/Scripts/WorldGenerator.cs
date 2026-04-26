@@ -30,14 +30,14 @@ public class BoxSide
 
 public class WorldGenerator : MonoBehaviour
 {
-    const int scale = 16;
+    const int scale = 32;
 
     public Dictionary<Vector3Int, Box> boxes = new();
 
     public void Awake()
     {
         Spawn(new Vector3Int(0, 0, 0));
-        // SpawnNeighbors(new Vector3Int(0, 0, 0));
+        SpawnNeighbors(new Vector3Int(0, 0, 0));
     }
     
     public void Spawn(Vector3Int pos)
@@ -133,7 +133,7 @@ public class WorldGenerator : MonoBehaviour
         Spawn(back);
     }
 
-    public Wall SpawnWall(Vector3Int pos, WallNormalDirection direction)
+    private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction)
     {
         GameObject wallObj = new($"Wall_{pos}_{direction}");
         Wall wall = wallObj.AddComponent<Wall>();
