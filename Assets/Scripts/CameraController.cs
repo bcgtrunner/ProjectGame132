@@ -125,25 +125,14 @@ public class CameraController : MonoBehaviour
     private void HandlePlayerAttachedToWall(Vector3 surfaceNormal)
     {
         Quaternion preservedWorldRotation = _hasLastWorldRotation ? _lastWorldRotation : transform.rotation;
-        Vector3 localAwayFromWall = _playerTransform.InverseTransformDirection(surfaceNormal.normalized);
         Quaternion preservedLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * preservedWorldRotation;
-        Vector3 targetForward = localAwayFromWall.normalized;
-        Vector3 targetUp = Vector3.ProjectOnPlane(preservedLocalRotation * Vector3.up, targetForward);
-
-        if (targetUp.sqrMagnitude < 0.0001f)
-        {
-            targetUp = Vector3.ProjectOnPlane(preservedLocalRotation * Vector3.right, targetForward);
-        }
-
-        if (targetUp.sqrMagnitude < 0.0001f)
-        {
-            targetUp = Vector3.ProjectOnPlane(Vector3.up, targetForward);
-        }
-
-        targetUp.Normalize();
+        Vector3 currentForward = preservedWorldRotation * Vector3.forward;
+        Vector3 targetForward = surfaceNormal.normalized;
+        Quaternion shortestDelta = Quaternion.FromToRotation(currentForward, targetForward);
+        Quaternion targetWorldRotation = shortestDelta * preservedWorldRotation;
 
         _attachStartLocalRotation = preservedLocalRotation;
-        _attachTargetLocalRotation = Quaternion.LookRotation(targetForward, targetUp);
+        _attachTargetLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * targetWorldRotation;
         _isAttachTransitionActive = true;
 
         // Apply immediately so the parent snap is canceled before the transition begins.
