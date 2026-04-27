@@ -140,6 +140,28 @@ public class CameraController : MonoBehaviour
         _transitionTime = 0f;
     }
 
+    private void OnGUI()
+    {
+        if (_camera == null) return;
+
+        float centerX = Screen.width / 2f;
+        float centerY = Screen.height / 2f;
+        float lineLength = 10f;
+        float lineWidth = 2f;
+        float gap = 4f;
+
+        Color originalColor = GUI.color;
+        GUI.color = Color.white;
+
+        GUI.DrawTexture(new Rect(centerX - lineWidth / 2f, centerY - gap - lineLength, lineWidth, lineLength), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(centerX - lineWidth / 2f, centerY + gap, lineWidth, lineLength), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(centerX - gap - lineLength, centerY - lineWidth / 2f, lineLength, lineWidth), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(centerX + gap, centerY - lineWidth / 2f, lineLength, lineWidth), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(centerX - 1f, centerY - 1f, 3f, 3f), Texture2D.whiteTexture);
+
+        GUI.color = originalColor;
+    }
+
     private void OnDestroy()
     {
         if (_playerController != null)

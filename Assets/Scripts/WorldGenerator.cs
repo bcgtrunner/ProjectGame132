@@ -169,7 +169,8 @@ public class WorldGenerator : MonoBehaviour
         else if (direction == WallNormalDirection.Y)
         {
             worldPos.y -= 0.5f;
-        } else if (direction == WallNormalDirection.Z)
+        }
+        else if (direction == WallNormalDirection.Z)
         {
             worldPos.z -= 0.5f;
         }
