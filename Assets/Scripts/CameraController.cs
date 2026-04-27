@@ -11,17 +11,14 @@ public class CameraController : MonoBehaviour
     private InputSystem_Actions _actions;
     private float _yaw;
     private float _pitch;
-    private float _targetYaw;
-    private float _targetPitch;
-    private float _startYaw;
-    private float _startPitch;
     private Quaternion _baseLocalRotation;
-    private Quaternion _targetBaseLocalRotation;
-    private Quaternion _startBaseLocalRotation;
+    private Quaternion _attachStartLocalRotation;
+    private Quaternion _attachTargetLocalRotation;
     private Transform _playerTransform;
     private Camera _camera;
     private Quaternion _lastWorldRotation;
     private bool _hasLastWorldRotation;
+    private bool _isAttachTransitionActive;
 
     private void Awake()
     {
@@ -96,25 +93,27 @@ public class CameraController : MonoBehaviour
                 ? Mathf.Clamp01(_transitionTime / _attachTransitionDuration)
                 : 1f;
 
-            // Lerp all components uniformly with same t so they arrive together
-            _yaw = Mathf.Lerp(_startYaw, _targetYaw, t);
-            _pitch = Mathf.Lerp(_startPitch, _targetPitch, t);
-            _baseLocalRotation = Quaternion.Slerp(_startBaseLocalRotation, _targetBaseLocalRotation, t);
+            if (_isAttachTransitionActive)
+            {
+                transform.localRotation = Quaternion.Slerp(_attachStartLocalRotation, _attachTargetLocalRotation, t);
+                _lastWorldRotation = transform.rotation;
+                _hasLastWorldRotation = true;
+                return;
+            }
         }
         else
         {
-            // Smoothly interpolate base rotation toward target
-            float rotationStep = _attachTransitionDuration > Mathf.Epsilon
-                ? Time.deltaTime / _attachTransitionDuration
-                : 1f;
-            _baseLocalRotation = Quaternion.Slerp(_baseLocalRotation, _targetBaseLocalRotation, rotationStep);
+            if (_isAttachTransitionActive)
+            {
+                _isAttachTransitionActive = false;
+                _baseLocalRotation = _attachTargetLocalRotation;
+                _yaw = 0f;
+                _pitch = 0f;
+            }
 
             Vector2 lookDelta = _actions.Player.Look.ReadValue<Vector2>();
             _yaw += lookDelta.x * _rotationSensitivity;
             _pitch = Mathf.Clamp(_pitch - lookDelta.y * _rotationSensitivity, _minPitch, _maxPitch);
-
-            _targetYaw = _yaw;
-            _targetPitch = _pitch;
         }
 
         transform.localPosition = Vector3.zero;
@@ -127,35 +126,28 @@ public class CameraController : MonoBehaviour
     {
         Quaternion preservedWorldRotation = _hasLastWorldRotation ? _lastWorldRotation : transform.rotation;
         Vector3 localAwayFromWall = _playerTransform.InverseTransformDirection(surfaceNormal.normalized);
-        Vector3 localUpReference = Vector3.up;
+        Quaternion preservedLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * preservedWorldRotation;
+        Vector3 targetForward = localAwayFromWall.normalized;
+        Vector3 targetUp = Vector3.ProjectOnPlane(preservedLocalRotation * Vector3.up, targetForward);
 
-        if (Mathf.Abs(Vector3.Dot(localAwayFromWall.normalized, localUpReference)) > 0.99f)
+        if (targetUp.sqrMagnitude < 0.0001f)
         {
-            localUpReference = Vector3.forward;
+            targetUp = Vector3.ProjectOnPlane(preservedLocalRotation * Vector3.right, targetForward);
         }
 
-        _targetBaseLocalRotation = Quaternion.LookRotation(localAwayFromWall, localUpReference);
-        _targetYaw = 0f;
-        _targetPitch = 0f;
+        if (targetUp.sqrMagnitude < 0.0001f)
+        {
+            targetUp = Vector3.ProjectOnPlane(Vector3.up, targetForward);
+        }
 
-        // Preserve the camera's current world orientation after the player snaps to the wall,
-        // then animate from that local rotation into the new wall-relative target.
-        Quaternion preservedLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * preservedWorldRotation;
-        Quaternion baseInverse = Quaternion.Inverse(_baseLocalRotation);
-        Quaternion lookOffset = baseInverse * preservedLocalRotation;
-        Vector3 preservedEuler = lookOffset.eulerAngles;
-        float preservedYaw = Mathf.DeltaAngle(0f, preservedEuler.y);
-        float preservedPitch = Mathf.DeltaAngle(0f, preservedEuler.x);
+        targetUp.Normalize();
+
+        _attachStartLocalRotation = preservedLocalRotation;
+        _attachTargetLocalRotation = Quaternion.LookRotation(targetForward, targetUp);
+        _isAttachTransitionActive = true;
 
         // Apply immediately so the parent snap is canceled before the transition begins.
-        transform.localRotation = preservedLocalRotation;
-
-        // Capture current component values as start of uniform transition
-        _yaw = preservedYaw;
-        _pitch = preservedPitch;
-        _startYaw = preservedYaw;
-        _startPitch = preservedPitch;
-        _startBaseLocalRotation = _baseLocalRotation;
+        transform.localRotation = _attachStartLocalRotation;
         _transitionTime = 0f;
     }
 
