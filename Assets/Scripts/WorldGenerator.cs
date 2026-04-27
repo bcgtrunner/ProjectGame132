@@ -136,6 +136,7 @@ public class WorldGenerator : MonoBehaviour
     private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction)
     {
         GameObject wallObj = new($"Wall_{pos}_{direction}");
+        
         Wall wall = wallObj.AddComponent<Wall>();
         Vector3 worldPos = pos;
         if (direction == WallNormalDirection.X)
