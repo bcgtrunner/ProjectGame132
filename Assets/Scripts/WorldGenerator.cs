@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -154,7 +153,8 @@ public class WorldGenerator : MonoBehaviour
         wallObj.transform.position = worldPos;
 
         MeshRenderer renderer = wallObj.AddComponent<MeshRenderer>();
-        renderer.sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        renderer.sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+        renderer.sharedMaterial.color = Random.Range(0.2f, 0.5f) * Color.white;
 
         MeshFilter filter = wallObj.AddComponent<MeshFilter>();
         filter.sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");

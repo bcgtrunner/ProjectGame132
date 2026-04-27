@@ -42,7 +42,7 @@ public class PlayerController : MonoBehaviour
     public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
     public bool IsAttached => _state == PlayerState.Attached;
 
-    private Cooldown _takeoffCooldown = new(0.5f);
+    private Cooldown _takeoffCooldown = new(1f);
 
     private void Awake()
     {
@@ -85,9 +85,10 @@ public class PlayerController : MonoBehaviour
 
     private bool TryAttach()
     {
-        float castDistance = _flySpeed * Time.deltaTime + _launchClearance + _playerCollider.bounds.size.y / 2;
+        float sphereRadius = GetProjectedHalfExtent(transform.rotation, _flyingDirection) * 0.9f;
+        float castDistance = _flySpeed * Time.deltaTime + sphereRadius + _launchClearance + _playerCollider.bounds.size.y;
 
-        if (!Physics.Raycast(transform.position, _flyingDirection, out RaycastHit hit, castDistance))
+        if (!Physics.SphereCast(transform.position, sphereRadius, _flyingDirection, out RaycastHit hit, castDistance))
         {
             return false;
         }
