@@ -6,7 +6,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float _rotationSensitivity = 0.3f;
     [SerializeField] private float _minPitch = -80f;
     [SerializeField] private float _maxPitch = 80f;
-    [SerializeField] private float _attachSmoothingSpeed = 8f;
+    [SerializeField] private float _attachTransitionDuration = 1f;
 
     private InputSystem_Actions _actions;
     private float _yaw;
@@ -20,6 +20,8 @@ public class CameraController : MonoBehaviour
     private Quaternion _startBaseLocalRotation;
     private Transform _playerTransform;
     private Camera _camera;
+    private Quaternion _lastWorldRotation;
+    private bool _hasLastWorldRotation;
 
     private void Awake()
     {
@@ -70,6 +72,8 @@ public class CameraController : MonoBehaviour
         _playerController.AttachedToWall += HandlePlayerAttachedToWall;
 
         HandlePlayerAttachedToWall(_playerController.CurrentSurfaceNormal);
+        _lastWorldRotation = transform.rotation;
+        _hasLastWorldRotation = true;
     }
 
     private float _transitionTime;
@@ -87,8 +91,10 @@ public class CameraController : MonoBehaviour
 
         if (onCooldown)
         {
-            _transitionTime += _attachSmoothingSpeed * Time.deltaTime;
-            float t = Mathf.Clamp01(_transitionTime);
+            _transitionTime += Time.deltaTime;
+            float t = _attachTransitionDuration > Mathf.Epsilon
+                ? Mathf.Clamp01(_transitionTime / _attachTransitionDuration)
+                : 1f;
 
             // Lerp all components uniformly with same t so they arrive together
             _yaw = Mathf.Lerp(_startYaw, _targetYaw, t);
@@ -98,7 +104,10 @@ public class CameraController : MonoBehaviour
         else
         {
             // Smoothly interpolate base rotation toward target
-            _baseLocalRotation = Quaternion.Slerp(_baseLocalRotation, _targetBaseLocalRotation, _attachSmoothingSpeed * Time.deltaTime);
+            float rotationStep = _attachTransitionDuration > Mathf.Epsilon
+                ? Time.deltaTime / _attachTransitionDuration
+                : 1f;
+            _baseLocalRotation = Quaternion.Slerp(_baseLocalRotation, _targetBaseLocalRotation, rotationStep);
 
             Vector2 lookDelta = _actions.Player.Look.ReadValue<Vector2>();
             _yaw += lookDelta.x * _rotationSensitivity;
@@ -110,10 +119,13 @@ public class CameraController : MonoBehaviour
 
         transform.localPosition = Vector3.zero;
         transform.localRotation = ComposeLocalRotation();
+        _lastWorldRotation = transform.rotation;
+        _hasLastWorldRotation = true;
     }
 
     private void HandlePlayerAttachedToWall(Vector3 surfaceNormal)
     {
+        Quaternion preservedWorldRotation = _hasLastWorldRotation ? _lastWorldRotation : transform.rotation;
         Vector3 localAwayFromWall = _playerTransform.InverseTransformDirection(surfaceNormal.normalized);
         Vector3 localUpReference = Vector3.up;
 
@@ -126,9 +138,23 @@ public class CameraController : MonoBehaviour
         _targetYaw = 0f;
         _targetPitch = 0f;
 
+        // Preserve the camera's current world orientation after the player snaps to the wall,
+        // then animate from that local rotation into the new wall-relative target.
+        Quaternion preservedLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * preservedWorldRotation;
+        Quaternion baseInverse = Quaternion.Inverse(_baseLocalRotation);
+        Quaternion lookOffset = baseInverse * preservedLocalRotation;
+        Vector3 preservedEuler = lookOffset.eulerAngles;
+        float preservedYaw = Mathf.DeltaAngle(0f, preservedEuler.y);
+        float preservedPitch = Mathf.DeltaAngle(0f, preservedEuler.x);
+
+        // Apply immediately so the parent snap is canceled before the transition begins.
+        transform.localRotation = preservedLocalRotation;
+
         // Capture current component values as start of uniform transition
-        _startYaw = _yaw;
-        _startPitch = _pitch;
+        _yaw = preservedYaw;
+        _pitch = preservedPitch;
+        _startYaw = preservedYaw;
+        _startPitch = preservedPitch;
         _startBaseLocalRotation = _baseLocalRotation;
         _transitionTime = 0f;
     }

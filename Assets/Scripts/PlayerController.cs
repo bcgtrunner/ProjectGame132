@@ -31,7 +31,6 @@ public class PlayerController : MonoBehaviour
 
     private enum PlayerState { Attached, Flying }
 
-    private InputSystem_Actions _actions;
     private Collider _playerCollider;
     private PlayerState _state = PlayerState.Attached;
     private Vector3 _flyingDirection;
@@ -40,63 +39,37 @@ public class PlayerController : MonoBehaviour
     public event Action<Vector3> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
     public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
+    public bool IsAttached => _state == PlayerState.Attached;
 
-    private Cooldown _takeoffCooldown = new(0.5f);
+    private Cooldown _takeoffCooldown = new(1f);
 
     private void Awake()
     {
-        _actions = new InputSystem_Actions();
-        _actions.UI.Enable();
         _playerCollider = GetComponent<Collider>();
     }
 
     private void Update()
     {
-        switch (_state)
+        if (_state == PlayerState.Flying)
         {
-            case PlayerState.Attached:
-                UpdateAttached();
-                break;
-            case PlayerState.Flying:
-                UpdateFlying();
-                break;
+            UpdateFlying();
         }
     }
 
-    private void TryStartFlying()
+    public void TryLaunch(Vector3 direction)
     {
-        if (IsTakeoffOnCooldown)
-        {
-            return;
-        }
-        
-        _flyingDirection = Camera.main.transform.forward;
+        if (_state != PlayerState.Attached || IsTakeoffOnCooldown) return;
 
-        // If the player is aiming back into the wall they're attached to,
-        // remain attached instead of trying to launch through the surface.
+        _flyingDirection = direction.normalized;
+
         if (Vector3.Dot(_flyingDirection, -CurrentSurfaceNormal.normalized) > 0f)
         {
             return;
         }
 
-        StartFlying();
-    }
-
-    private void StartFlying()
-    {
-        _flyingDirection = Camera.main.transform.forward;
-        // Move slightly away from the surface before flight starts so we don't begin inside the attached wall.
         transform.position += CurrentSurfaceNormal.normalized * _launchClearance;
         _attachedWallCollider = null;
         _state = PlayerState.Flying;
-    }
-
-    private void UpdateAttached()
-    {
-        if (_actions.UI.Click.WasPressedThisFrame())
-        {
-            TryStartFlying();
-        }
     }
 
     private void UpdateFlying()
@@ -161,10 +134,7 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 GetSafeSurfacePoint(Vector3 targetPosition, Vector3 surfaceNormal, Quaternion targetRotation, Collider hitCollider)
     {
-        if (hitCollider is not BoxCollider wallBox)
-        {
-            return targetPosition;
-        }
+        if (hitCollider is not BoxCollider wallBox) return targetPosition;
 
         Transform wallTransform = wallBox.transform;
         Vector3 localSurfaceNormal = wallTransform.InverseTransformDirection(surfaceNormal).normalized;
@@ -195,7 +165,6 @@ public class PlayerController : MonoBehaviour
                 : 0f;
             AxisUtils.SetAxis(ref localPoint, axis, clampedValue);
         }
-
         return wallTransform.TransformPoint(localPoint + wallBox.center);
     }
 
@@ -207,37 +176,16 @@ public class PlayerController : MonoBehaviour
                 Mathf.Sign(localFaceNormal.x) * boxCollider.size.x * 0.5f * Mathf.Abs(localFaceNormal.x),
                 Mathf.Sign(localFaceNormal.y) * boxCollider.size.y * 0.5f * Mathf.Abs(localFaceNormal.y),
                 Mathf.Sign(localFaceNormal.z) * boxCollider.size.z * 0.5f * Mathf.Abs(localFaceNormal.z));
-
-            Vector3 scaledLocalPoint = Vector3.Scale(localFacePoint, transform.lossyScale);
-            return rotation * scaledLocalPoint;
+            return rotation * Vector3.Scale(localFacePoint, transform.lossyScale);
         }
-
-        if (_playerCollider != null)
-        {
-            Vector3 worldFaceDirection = rotation * localFaceNormal;
-            return worldFaceDirection.normalized * _playerCollider.bounds.extents.magnitude;
-        }
-
-        return rotation * localFaceNormal * 0.5f;
+        return (_playerCollider != null) ? (rotation * localFaceNormal).normalized * _playerCollider.bounds.extents.magnitude : rotation * localFaceNormal * 0.5f;
     }
 
     private float GetProjectedHalfExtent(Quaternion rotation, Vector3 worldAxis)
     {
-        if (_playerCollider is not BoxCollider playerBox)
-        {
-            return _playerCollider != null ? _playerCollider.bounds.extents.magnitude : 0.5f;
-        }
-
+        if (_playerCollider is not BoxCollider playerBox) return _playerCollider != null ? _playerCollider.bounds.extents.magnitude : 0.5f;
         Vector3 halfSize = Vector3.Scale(playerBox.size * 0.5f, transform.lossyScale);
         Vector3 axis = worldAxis.normalized;
-
-        return Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.right)) * halfSize.x
-            + Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.up)) * halfSize.y
-            + Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.forward)) * halfSize.z;
-    }
-
-    private void OnDestroy()
-    {
-        _actions?.Dispose();
+        return Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.right)) * halfSize.x + Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.up)) * halfSize.y + Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.forward)) * halfSize.z;
     }
 }
