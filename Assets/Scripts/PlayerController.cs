@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Vector3 _wallTouchingSideLocalNormal = Vector3.down;
     [SerializeField] private float _flySpeed = 10f;
     [SerializeField] private float _launchClearance = 0.1f;
+    [SerializeField] private float _collisionSkin = 0.02f;
 
     private enum PlayerState { Attached, Flying }
 
@@ -70,32 +71,27 @@ public class PlayerController : MonoBehaviour
 
         transform.position += CurrentSurfaceNormal.normalized * _launchClearance;
         _attachedWallCollider = null;
+        ResolveWallOverlaps();
         _state = PlayerState.Flying;
     }
 
     private void UpdateFlying()
     {
-        if (TryAttach())
+        ResolveWallOverlaps();
+
+        float moveDistance = _flySpeed * Time.deltaTime;
+
+        if (TryAttach(moveDistance))
         {
             return;
         }
 
-        transform.position += _flyingDirection * (_flySpeed * Time.deltaTime);
+        transform.position += _flyingDirection * moveDistance;
     }
 
-    private bool TryAttach()
+    private bool TryAttach(float moveDistance)
     {
-        float sphereRadius = GetProjectedHalfExtent(transform.rotation, _flyingDirection) * 0.9f;
-        float castDistance = _flySpeed * Time.deltaTime + sphereRadius + _launchClearance + _playerCollider.bounds.size.y;
-
-        if (!Physics.SphereCast(transform.position, sphereRadius, _flyingDirection, out RaycastHit hit, castDistance))
-        {
-            return false;
-        }
-
-        if (hit.collider == _playerCollider ||
-            !hit.collider.TryGetComponent<Wall>(out _) ||
-            hit.collider == _attachedWallCollider)
+        if (!TryGetClosestWallHit(_flyingDirection, moveDistance + _collisionSkin, out RaycastHit hit))
         {
             return false;
         }
@@ -188,5 +184,119 @@ public class PlayerController : MonoBehaviour
         Vector3 halfSize = Vector3.Scale(playerBox.size * 0.5f, transform.lossyScale);
         Vector3 axis = worldAxis.normalized;
         return Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.right)) * halfSize.x + Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.up)) * halfSize.y + Mathf.Abs(Vector3.Dot(axis, rotation * Vector3.forward)) * halfSize.z;
+    }
+
+    private bool TryGetClosestWallHit(Vector3 direction, float castDistance, out RaycastHit closestHit)
+    {
+        if (_playerCollider is BoxCollider playerBox)
+        {
+            Vector3 center = GetBoxColliderWorldCenter(playerBox, transform.position, transform.rotation);
+            Vector3 halfExtents = ShrinkHalfExtents(GetBoxColliderHalfExtents(playerBox), _collisionSkin);
+            RaycastHit[] hits = Physics.BoxCastAll(center, halfExtents, direction, transform.rotation, castDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            return TryGetClosestValidWallHit(hits, out closestHit);
+        }
+
+        float sphereRadius = Mathf.Max(GetProjectedHalfExtent(transform.rotation, direction) - _collisionSkin, 0.001f);
+        RaycastHit[] sphereHits = Physics.SphereCastAll(transform.position, sphereRadius, direction, castDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+        return TryGetClosestValidWallHit(sphereHits, out closestHit);
+    }
+
+    private bool TryGetClosestValidWallHit(RaycastHit[] hits, out RaycastHit closestHit)
+    {
+        closestHit = default;
+        bool foundHit = false;
+        float closestDistance = float.MaxValue;
+
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider == _playerCollider ||
+                hit.collider == _attachedWallCollider ||
+                !hit.collider.TryGetComponent<Wall>(out _))
+            {
+                continue;
+            }
+
+            if (hit.distance >= closestDistance)
+            {
+                continue;
+            }
+
+            closestDistance = hit.distance;
+            closestHit = hit;
+            foundHit = true;
+        }
+
+        return foundHit;
+    }
+
+    private void ResolveWallOverlaps()
+    {
+        if (_playerCollider is not BoxCollider playerBox)
+        {
+            return;
+        }
+
+        for (int iteration = 0; iteration < 3; iteration++)
+        {
+            Vector3 center = GetBoxColliderWorldCenter(playerBox, transform.position, transform.rotation);
+            Vector3 halfExtents = ShrinkHalfExtents(GetBoxColliderHalfExtents(playerBox), _collisionSkin * 0.5f);
+            Collider[] overlaps = Physics.OverlapBox(center, halfExtents, transform.rotation, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            Vector3 correction = Vector3.zero;
+
+            foreach (Collider overlap in overlaps)
+            {
+                if (overlap == _playerCollider ||
+                    overlap == _attachedWallCollider ||
+                    !overlap.TryGetComponent<Wall>(out _))
+                {
+                    continue;
+                }
+
+                if (!Physics.ComputePenetration(
+                        playerBox,
+                        transform.position,
+                        transform.rotation,
+                        overlap,
+                        overlap.transform.position,
+                        overlap.transform.rotation,
+                        out Vector3 direction,
+                        out float distance) ||
+                    distance <= 0f)
+                {
+                    continue;
+                }
+
+                correction += direction * (distance + _collisionSkin);
+            }
+
+            if (correction.sqrMagnitude <= Mathf.Epsilon)
+            {
+                return;
+            }
+
+            transform.position += correction;
+        }
+    }
+
+    private Vector3 GetBoxColliderWorldCenter(BoxCollider boxCollider, Vector3 position, Quaternion rotation)
+    {
+        return position + rotation * Vector3.Scale(boxCollider.center, transform.lossyScale);
+    }
+
+    private Vector3 GetBoxColliderHalfExtents(BoxCollider boxCollider)
+    {
+        Vector3 absoluteScale = new(
+            Mathf.Abs(transform.lossyScale.x),
+            Mathf.Abs(transform.lossyScale.y),
+            Mathf.Abs(transform.lossyScale.z));
+        return Vector3.Scale(boxCollider.size * 0.5f, absoluteScale);
+    }
+
+    private static Vector3 ShrinkHalfExtents(Vector3 halfExtents, float amount)
+    {
+        return new Vector3(
+            Mathf.Max(halfExtents.x - amount, 0.001f),
+            Mathf.Max(halfExtents.y - amount, 0.001f),
+            Mathf.Max(halfExtents.z - amount, 0.001f));
     }
 }
