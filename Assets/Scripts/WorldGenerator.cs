@@ -27,11 +27,22 @@ public class BoxSide
     public Box box;
 }
 
+public class WallBoxes
+{
+    public Box first;
+    public Box second;
+}
+
 public class WorldGenerator : MonoBehaviour
 {
     const int scale = 32;
+    const float wallWidth = 0.05f;
 
     public Dictionary<Vector3Int, Box> boxes = new();
+    public Dictionary<Wall, WallBoxes> wallBoxes = new();
+
+    private Material _sharedWallMaterial;
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
     public void Awake()
     {
@@ -53,60 +64,72 @@ public class WorldGenerator : MonoBehaviour
         {
             box.top.box = upBox;
             box.top.wall = upBox.bottom.wall;
+            upBox.bottom.box = box;
         } else
         {
             box.top.wall = SpawnWall(up, WallNormalDirection.Y);
         }
+        RegisterWallBox(box.top.wall, box);
 
         Vector3Int down = pos + Vector3Int.down;
         if (boxes.TryGetValue(down, out Box downBox))
         {
             box.bottom.box = downBox;
             box.bottom.wall = downBox.top.wall;
+            downBox.top.box = box;
         } else
         {
             box.bottom.wall = SpawnWall(pos, WallNormalDirection.Y);
         }
+        RegisterWallBox(box.bottom.wall, box);
 
         Vector3Int left = pos + Vector3Int.left;
         if (boxes.TryGetValue(left, out Box leftBox))
         {
             box.left.box = leftBox;
             box.left.wall = leftBox.right.wall;
+            leftBox.right.box = box;
         } else
         {
             box.left.wall = SpawnWall(left, WallNormalDirection.X);
         }
+        RegisterWallBox(box.left.wall, box);
 
         Vector3Int right = pos + Vector3Int.right;
         if (boxes.TryGetValue(right, out Box rightBox))
         {
             box.right.box = rightBox;
             box.right.wall = rightBox.left.wall;
+            rightBox.left.box = box;
         } else
         {
             box.right.wall = SpawnWall(pos, WallNormalDirection.X);
         }
+        RegisterWallBox(box.right.wall, box);
 
         Vector3Int forward = pos + Vector3Int.forward;
         if (boxes.TryGetValue(forward, out Box frontBox))
         {
             box.front.box = frontBox;
             box.front.wall = frontBox.back.wall;
+            frontBox.back.box = box;
         } else
         {
             box.front.wall = SpawnWall(forward, WallNormalDirection.Z);
         }
+        RegisterWallBox(box.front.wall, box);
 
         Vector3Int back = pos + Vector3Int.back;
         if (boxes.TryGetValue(back, out Box backBox))
         {
             box.back.box = backBox;
             box.back.wall = backBox.front.wall;
+            backBox.front.box = box;
         } else
         {
             box.back.wall = SpawnWall(pos, WallNormalDirection.Z);
         }
+        RegisterWallBox(box.back.wall, box);
 
         boxes[pos] = box;
     }
@@ -135,6 +158,7 @@ public class WorldGenerator : MonoBehaviour
     private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction)
     {
         GameObject wallObj = new($"Wall_{pos}_{direction}");
+        wallObj.transform.SetParent(transform, false);
         
         Wall wall = wallObj.AddComponent<Wall>();
         Vector3 worldPos = pos;
@@ -153,27 +177,64 @@ public class WorldGenerator : MonoBehaviour
         wallObj.transform.position = worldPos;
 
         MeshRenderer renderer = wallObj.AddComponent<MeshRenderer>();
-        renderer.sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-        renderer.sharedMaterial.color = Random.Range(0.2f, 0.5f) * Color.white;
+        renderer.sharedMaterial = GetSharedWallMaterial();
+        MaterialPropertyBlock propertyBlock = new();
+        propertyBlock.SetColor(BaseColorId, Random.Range(0.2f, 0.5f) * Color.white);
+        renderer.SetPropertyBlock(propertyBlock);
 
         MeshFilter filter = wallObj.AddComponent<MeshFilter>();
         filter.sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
 
-        BoxCollider collider = wallObj.AddComponent<BoxCollider>();
+        wallObj.AddComponent<BoxCollider>();
 
         switch (direction)
         {
             case WallNormalDirection.X:
-                wallObj.transform.localScale = new Vector3(0.05f, scale, scale);
+                wallObj.transform.localScale = new Vector3(wallWidth, scale, scale);
                 break;
             case WallNormalDirection.Y:
-                wallObj.transform.localScale = new Vector3(scale, 0.05f, scale);
+                wallObj.transform.localScale = new Vector3(scale, wallWidth, scale);
                 break;
             case WallNormalDirection.Z:
-                wallObj.transform.localScale = new Vector3(scale, scale, 0.05f);
+                wallObj.transform.localScale = new Vector3(scale, scale, wallWidth);
                 break;
         }
 
         return wall;
+    }
+
+    private void RegisterWallBox(Wall wall, Box box)
+    {
+        if (wall == null || box == null)
+        {
+            return;
+        }
+
+        if (!wallBoxes.TryGetValue(wall, out WallBoxes adjacentBoxes))
+        {
+            adjacentBoxes = new WallBoxes();
+            wallBoxes[wall] = adjacentBoxes;
+        }
+
+        if (adjacentBoxes.first == null)
+        {
+            adjacentBoxes.first = box;
+            return;
+        }
+
+        if (adjacentBoxes.first != box && adjacentBoxes.second == null)
+        {
+            adjacentBoxes.second = box;
+        }
+    }
+
+    private Material GetSharedWallMaterial()
+    {
+        if (_sharedWallMaterial == null)
+        {
+            _sharedWallMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+        }
+
+        return _sharedWallMaterial;
     }
 }
