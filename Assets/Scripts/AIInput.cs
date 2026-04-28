@@ -32,6 +32,11 @@ public class AIInput : MonoBehaviour
         _controller.TryLaunch(launchDirection);
     }
 
+    public void SetVirtualAttachment(Vector3 surfaceNormal)
+    {
+        _controller.SetVirtualAttachment(surfaceNormal);
+    }
+
     private void Update()
     {
         if (_controller.IsAttached && !isLaunching && !isShooting)

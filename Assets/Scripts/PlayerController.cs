@@ -75,6 +75,16 @@ public class PlayerController : MonoBehaviour
         _state = PlayerState.Flying;
     }
 
+    public void SetVirtualAttachment(Vector3 surfaceNormal)
+    {
+        CurrentSurfaceNormal = surfaceNormal.sqrMagnitude > Mathf.Epsilon
+            ? surfaceNormal.normalized
+            : Vector3.up;
+        _attachedWallCollider = null;
+        _state = PlayerState.Attached;
+        AttachedToWall?.Invoke(CurrentSurfaceNormal);
+    }
+
     private void UpdateFlying()
     {
         ResolveWallOverlaps();
