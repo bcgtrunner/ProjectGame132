@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 7346255651251405399}
   - component: {fileID: 109459262745567538}
   - component: {fileID: -7784134256379187254}
+  - component: {fileID: 2484666450189638920}
   m_Layer: 2
   m_Name: Botik
   m_TagString: Untagged
@@ -130,6 +131,7 @@ MonoBehaviour:
   _wallTouchingSideLocalNormal: {x: 0, y: -1, z: 0}
   _flySpeed: 10
   _launchClearance: 0.02
+  _collisionSkin: 0.02
 --- !u!114 &109459262745567538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -144,6 +146,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AIInput
   _minWaitTime: 0.1
   _maxWaitTime: 0.5
+  Target: {fileID: 0}
 --- !u!54 &-7784134256379187254
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -171,3 +174,17 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &2484666450189638920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7496898296332208269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07be1f56a16df7446aaec42cfa7438e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaintShooter
+  WallDamage: 1
+  Paint: {fileID: 0}

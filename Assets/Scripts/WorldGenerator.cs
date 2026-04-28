@@ -161,6 +161,7 @@ public class WorldGenerator : MonoBehaviour
         wallObj.transform.SetParent(transform, false);
         
         Wall wall = wallObj.AddComponent<Wall>();
+        wall.OnDestroy += () => SpawnNeighbors(pos);
         Vector3 worldPos = pos;
         if (direction == WallNormalDirection.X)
         {
