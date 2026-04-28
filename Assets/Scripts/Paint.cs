@@ -12,9 +12,9 @@ public class Paint : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent<AIInput>(out var player))
+        if (other.TryGetComponent<PlayerController>(out var controller))
         {
-            Destroy(player.gameObject);
+            Destroy(controller.gameObject);
         }
     }
 
