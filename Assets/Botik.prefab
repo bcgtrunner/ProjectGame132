@@ -187,4 +187,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PaintShooter
   WallDamage: 1
-  Paint: {fileID: 0}
+  Paint: {fileID: 2856362086672070936, guid: b29657ad1b7c1174b8c6dc53acac6393, type: 3}

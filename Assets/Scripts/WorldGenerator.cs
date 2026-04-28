@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using UnityEngine;
 
 public enum WallNormalDirection
@@ -36,18 +35,28 @@ public class WallBoxes
 public class WorldGenerator : MonoBehaviour
 {
     const int scale = 32;
-    const float wallWidth = 0.05f;
+    const float wallWidth = 1f;
+
+    [SerializeField] private AIInput _botPrefab;
+    [SerializeField] private PlayerController _botTarget;
+    [SerializeField] private int _botsPerBox = 10;
 
     public Dictionary<Vector3Int, Box> boxes = new();
     public Dictionary<Wall, WallBoxes> wallBoxes = new();
+    public List<AIInput> bots = new();
 
     private Material _sharedWallMaterial;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private readonly HashSet<Vector3Int> _filledBoxes = new();
 
     public void Awake()
     {
-        Spawn(new Vector3Int(0, 0, 0));
-        SpawnNeighbors(new Vector3Int(0, 0, 0));
+        if (_botTarget == null)
+        {
+            _botTarget = FindAnyObjectByType<PlayerInput>()?.GetComponent<PlayerController>();
+        }
+
+        SpawnFilled(new Vector3Int(0, 0, 0));
     }
     
     public void Spawn(Vector3Int pos)
@@ -137,22 +146,56 @@ public class WorldGenerator : MonoBehaviour
     public void SpawnNeighbors(Vector3Int pos)
     {
         Vector3Int up = pos + Vector3Int.up;
-        Spawn(up);
+        SpawnFilled(up);
 
         Vector3Int down = pos + Vector3Int.down;
-        Spawn(down);
+        SpawnFilled(down);
 
         Vector3Int left = pos + Vector3Int.left;
-        Spawn(left);
+        SpawnFilled(left);
 
         Vector3Int right = pos + Vector3Int.right;
-        Spawn(right);
+        SpawnFilled(right);
 
         Vector3Int forward = pos + Vector3Int.forward;
-        Spawn(forward);
+        SpawnFilled(forward);
 
         Vector3Int back = pos + Vector3Int.back;
-        Spawn(back);
+        SpawnFilled(back);
+    }
+
+    public void SpawnFilled(Vector3Int pos)
+    {
+        Spawn(pos);
+        FillBox(pos);
+    }
+
+    public void FillBox(Vector3Int pos)
+    {
+        if (_filledBoxes.Contains(pos) ||
+            !boxes.TryGetValue(pos, out _))
+        {
+            return;
+        }
+
+        if (_botPrefab == null)
+        {
+            Debug.LogWarning($"WorldGenerator cannot fill box {pos} because Bot Prefab is not assigned.", this);
+            return;
+        }
+
+        CleanupMissingBots();
+
+        for (int i = 0; i < _botsPerBox; i++)
+        {
+            AIInput bot = Instantiate(_botPrefab, GetBotSpawnPosition(pos, i), Quaternion.identity);
+            bot.Target = _botTarget;
+            bot.Destroyed += HandleBotDestroyed;
+            bots.Add(bot);
+            bot.LaunchImmediately();
+        }
+
+        _filledBoxes.Add(pos);
     }
 
     private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction)
@@ -161,7 +204,7 @@ public class WorldGenerator : MonoBehaviour
         wallObj.transform.SetParent(transform, false);
         
         Wall wall = wallObj.AddComponent<Wall>();
-        wall.OnDestroy += () => SpawnNeighbors(pos);
+        wall.OnDestroy += () => HandleWallDestroyed(wall, pos, direction);
         Vector3 worldPos = pos;
         if (direction == WallNormalDirection.X)
         {
@@ -205,6 +248,53 @@ public class WorldGenerator : MonoBehaviour
         return wall;
     }
 
+    private void HandleWallDestroyed(Wall wall, Vector3Int wallPos, WallNormalDirection direction)
+    {
+        wallBoxes.Remove(wall);
+        GetAdjacentBoxPositions(wallPos, direction, out Vector3Int firstBoxPos, out Vector3Int secondBoxPos);
+
+        bool hasFirstBox = boxes.ContainsKey(firstBoxPos);
+        bool hasSecondBox = boxes.ContainsKey(secondBoxPos);
+
+        if (!hasFirstBox && !hasSecondBox)
+        {
+            SpawnFilled(firstBoxPos);
+            SpawnFilled(secondBoxPos);
+            return;
+        }
+
+        if (hasFirstBox == hasSecondBox)
+        {
+            return;
+        }
+
+        Vector3Int openedBoxPos = hasFirstBox ? secondBoxPos : firstBoxPos;
+        SpawnFilled(openedBoxPos);
+    }
+
+    private static void GetAdjacentBoxPositions(
+        Vector3Int wallPos,
+        WallNormalDirection direction,
+        out Vector3Int firstBoxPos,
+        out Vector3Int secondBoxPos)
+    {
+        switch (direction)
+        {
+            case WallNormalDirection.X:
+                firstBoxPos = wallPos;
+                secondBoxPos = wallPos + Vector3Int.right;
+                return;
+            case WallNormalDirection.Y:
+                firstBoxPos = wallPos + Vector3Int.down;
+                secondBoxPos = wallPos;
+                return;
+            default:
+                firstBoxPos = wallPos + Vector3Int.back;
+                secondBoxPos = wallPos;
+                return;
+        }
+    }
+
     private void RegisterWallBox(Wall wall, Box box)
     {
         if (wall == null || box == null)
@@ -238,5 +328,76 @@ public class WorldGenerator : MonoBehaviour
         }
 
         return _sharedWallMaterial;
+    }
+
+    private Vector3 GetBotSpawnPosition(Vector3Int boxPos, int botIndex)
+    {
+        float floorY = boxPos.y * scale - (scale * 0.5f) + GetBotHalfHeight();
+        Vector3 basePosition = new(boxPos.x * scale, floorY, boxPos.z * scale);
+        Vector3 horizontalOffset = GetHorizontalSpawnOffset(botIndex);
+        return basePosition + horizontalOffset;
+    }
+
+    private Vector3 GetHorizontalSpawnOffset(int botIndex)
+    {
+        if (_botsPerBox <= 1)
+        {
+            return Vector3.zero;
+        }
+
+        int gridSize = Mathf.CeilToInt(Mathf.Sqrt(_botsPerBox));
+        float maxSpan = scale - 4f;
+        float spacing = gridSize > 1 ? Mathf.Min(2.5f, maxSpan / (gridSize - 1)) : 0f;
+        float start = -0.5f * (gridSize - 1) * spacing;
+        int row = botIndex / gridSize;
+        int column = botIndex % gridSize;
+        return new Vector3(start + (column * spacing), 0f, start + (row * spacing));
+    }
+
+    private float GetBotHalfHeight()
+    {
+        if (_botPrefab.TryGetComponent<BoxCollider>(out BoxCollider boxCollider))
+        {
+            return Mathf.Max(boxCollider.size.y * Mathf.Abs(_botPrefab.transform.localScale.y) * 0.5f, 0.5f);
+        }
+
+        if (_botPrefab.TryGetComponent<SphereCollider>(out SphereCollider sphereCollider))
+        {
+            return Mathf.Max(sphereCollider.radius * Mathf.Abs(_botPrefab.transform.localScale.y), 0.5f);
+        }
+
+        if (_botPrefab.TryGetComponent<CapsuleCollider>(out CapsuleCollider capsuleCollider))
+        {
+            return Mathf.Max(capsuleCollider.height * Mathf.Abs(_botPrefab.transform.localScale.y) * 0.5f, 0.5f);
+        }
+
+        if (_botPrefab.GetComponent<Collider>() == null)
+        {
+            return 0.5f;
+        }
+
+        return 0.5f;
+    }
+
+    private void HandleBotDestroyed(AIInput bot)
+    {
+        if (bot == null)
+        {
+            return;
+        }
+
+        bot.Destroyed -= HandleBotDestroyed;
+        bots.Remove(bot);
+    }
+
+    private void CleanupMissingBots()
+    {
+        for (int i = bots.Count - 1; i >= 0; i--)
+        {
+            if (bots[i] == null)
+            {
+                bots.RemoveAt(i);
+            }
+        }
     }
 }

@@ -8,6 +8,12 @@ public class PaintShooter : MonoBehaviour
 
     public void TryShoot(Vector3 dir)
     {
+        if (Paint == null)
+        {
+            Debug.LogWarning($"PaintShooter on {name} cannot shoot because Paint prefab is not assigned.", this);
+            return;
+        }
+
         if (Physics.Raycast(transform.position, dir, out var hit, 300f, 1))
         {
             GameObject hitGameObject = hit.collider.gameObject;
