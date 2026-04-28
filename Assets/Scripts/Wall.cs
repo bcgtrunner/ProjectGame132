@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -6,4 +7,29 @@ using UnityEngine;
 /// </summary>
 public class Wall : MonoBehaviour
 {
+    public int MaxHealth = 20;
+    public int Health { get; private set; }
+
+    public Action OnDestroy;
+
+    private void Start()
+    {
+        Health = MaxHealth;
+    }
+
+    public void Damage(int points)
+    {
+        Health -= points;
+        if (Health <= 0)
+        {
+            Health = 0;
+            Destroy();
+        }
+    }
+
+    private void Destroy()
+    {
+        OnDestroy?.Invoke();
+        Destroy(gameObject);
+    }
 }
