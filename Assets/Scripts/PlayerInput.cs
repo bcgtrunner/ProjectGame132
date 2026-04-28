@@ -14,6 +14,13 @@ public class PlayerInput : MonoBehaviour
         _actions = new InputSystem_Actions();
     }
 
+    private void Start()
+    {
+        _controller.SetVirtualAttachment(Vector3.up);
+        Vector3 launchDirection = Camera.main != null ? Camera.main.transform.forward : transform.forward;
+        _controller.TryLaunch(launchDirection);
+    }
+
     private void OnEnable() => _actions.UI.Enable();
     private void OnDisable() => _actions.UI.Disable();
 

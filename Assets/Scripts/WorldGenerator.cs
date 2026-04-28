@@ -170,7 +170,18 @@ public class WorldGenerator : MonoBehaviour
         FillBox(pos);
     }
 
+    public void SpawnFilled(Vector3Int pos, Vector3 openingDirection)
+    {
+        Spawn(pos);
+        FillBox(pos, openingDirection);
+    }
+
     public void FillBox(Vector3Int pos)
+    {
+        FillBox(pos, Vector3.zero);
+    }
+
+    public void FillBox(Vector3Int pos, Vector3 openingDirection)
     {
         if (_filledBoxes.Contains(pos) ||
             !boxes.TryGetValue(pos, out _))
@@ -192,6 +203,7 @@ public class WorldGenerator : MonoBehaviour
             bot.Target = _botTarget;
             bot.Destroyed += HandleBotDestroyed;
             bots.Add(bot);
+            bot.SetVirtualAttachment(GetSpawnSurfaceNormal(openingDirection));
             bot.LaunchImmediately();
         }
 
@@ -269,7 +281,8 @@ public class WorldGenerator : MonoBehaviour
         }
 
         Vector3Int openedBoxPos = hasFirstBox ? secondBoxPos : firstBoxPos;
-        SpawnFilled(openedBoxPos);
+        Vector3 openingDirection = GetOpeningDirectionForBox(openedBoxPos, wallPos, direction);
+        SpawnFilled(openedBoxPos, openingDirection);
     }
 
     private static void GetAdjacentBoxPositions(
@@ -332,26 +345,7 @@ public class WorldGenerator : MonoBehaviour
 
     private Vector3 GetBotSpawnPosition(Vector3Int boxPos, int botIndex)
     {
-        float floorY = boxPos.y * scale - (scale * 0.5f) + GetBotHalfHeight();
-        Vector3 basePosition = new(boxPos.x * scale, floorY, boxPos.z * scale);
-        Vector3 horizontalOffset = GetHorizontalSpawnOffset(botIndex);
-        return basePosition + horizontalOffset;
-    }
-
-    private Vector3 GetHorizontalSpawnOffset(int botIndex)
-    {
-        if (_botsPerBox <= 1)
-        {
-            return Vector3.zero;
-        }
-
-        int gridSize = Mathf.CeilToInt(Mathf.Sqrt(_botsPerBox));
-        float maxSpan = scale - 4f;
-        float spacing = gridSize > 1 ? Mathf.Min(2.5f, maxSpan / (gridSize - 1)) : 0f;
-        float start = -0.5f * (gridSize - 1) * spacing;
-        int row = botIndex / gridSize;
-        int column = botIndex % gridSize;
-        return new Vector3(start + (column * spacing), 0f, start + (row * spacing));
+        return new Vector3(boxPos.x * scale, boxPos.y * scale, boxPos.z * scale);
     }
 
     private float GetBotHalfHeight()
@@ -377,6 +371,23 @@ public class WorldGenerator : MonoBehaviour
         }
 
         return 0.5f;
+    }
+
+    private static Vector3 GetOpeningDirectionForBox(Vector3Int boxPos, Vector3Int wallPos, WallNormalDirection direction)
+    {
+        return direction switch
+        {
+            WallNormalDirection.X => boxPos == wallPos ? Vector3.right : Vector3.left,
+            WallNormalDirection.Y => boxPos == wallPos ? Vector3.down : Vector3.up,
+            _ => boxPos == wallPos ? Vector3.back : Vector3.forward
+        };
+    }
+
+    private static Vector3 GetSpawnSurfaceNormal(Vector3 openingDirection)
+    {
+        return openingDirection.sqrMagnitude > Mathf.Epsilon
+            ? openingDirection.normalized
+            : Vector3.up;
     }
 
     private void HandleBotDestroyed(AIInput bot)
