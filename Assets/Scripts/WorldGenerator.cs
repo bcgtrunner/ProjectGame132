@@ -263,6 +263,7 @@ public class WorldGenerator : MonoBehaviour
     private void HandleWallDestroyed(Wall wall, Vector3Int wallPos, WallNormalDirection direction)
     {
         wallBoxes.Remove(wall);
+        KillCharactersAttachedToWall(wall);
         GetAdjacentBoxPositions(wallPos, direction, out Vector3Int firstBoxPos, out Vector3Int secondBoxPos);
 
         bool hasFirstBox = boxes.ContainsKey(firstBoxPos);
@@ -283,6 +284,28 @@ public class WorldGenerator : MonoBehaviour
         Vector3Int openedBoxPos = hasFirstBox ? secondBoxPos : firstBoxPos;
         Vector3 openingDirection = GetOpeningDirectionForBox(openedBoxPos, wallPos, direction);
         SpawnFilled(openedBoxPos, openingDirection);
+    }
+
+    private void KillCharactersAttachedToWall(Wall wall)
+    {
+        Collider wallCollider = wall.GetComponent<Collider>();
+        if (wallCollider == null) return;
+
+        for (int i = bots.Count - 1; i >= 0; i--)
+        {
+            if (bots[i] == null) continue;
+
+            PlayerController controller = bots[i].GetComponent<PlayerController>();
+            if (controller != null && controller.AttachedWallCollider == wallCollider)
+            {
+                Destroy(bots[i].gameObject);
+            }
+        }
+
+        if (_botTarget != null && _botTarget.AttachedWallCollider == wallCollider)
+        {
+            Destroy(_botTarget.gameObject);
+        }
     }
 
     private static void GetAdjacentBoxPositions(
