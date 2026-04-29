@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Paint : MonoBehaviour
 {
@@ -12,7 +13,11 @@ public class Paint : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent<PlayerController>(out var controller))
+        if (other.TryGetComponent<PlayerInput>(out var player))
+        {
+            SceneManager.LoadScene(0);
+        }
+        else if (other.TryGetComponent<PlayerController>(out var controller))
         {
             Destroy(controller.gameObject);
         }
