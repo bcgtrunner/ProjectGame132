@@ -76,7 +76,7 @@ public class WorldGenerator : MonoBehaviour
             upBox.bottom.box = box;
         } else
         {
-            box.top.wall = SpawnWall(up, WallNormalDirection.Y);
+            box.top.wall = SpawnWall(up, WallNormalDirection.Y, pos);
         }
         RegisterWallBox(box.top.wall, box);
 
@@ -88,7 +88,7 @@ public class WorldGenerator : MonoBehaviour
             downBox.top.box = box;
         } else
         {
-            box.bottom.wall = SpawnWall(pos, WallNormalDirection.Y);
+            box.bottom.wall = SpawnWall(pos, WallNormalDirection.Y, pos);
         }
         RegisterWallBox(box.bottom.wall, box);
 
@@ -100,7 +100,7 @@ public class WorldGenerator : MonoBehaviour
             leftBox.right.box = box;
         } else
         {
-            box.left.wall = SpawnWall(left, WallNormalDirection.X);
+            box.left.wall = SpawnWall(left, WallNormalDirection.X, pos);
         }
         RegisterWallBox(box.left.wall, box);
 
@@ -112,7 +112,7 @@ public class WorldGenerator : MonoBehaviour
             rightBox.left.box = box;
         } else
         {
-            box.right.wall = SpawnWall(pos, WallNormalDirection.X);
+            box.right.wall = SpawnWall(pos, WallNormalDirection.X, pos);
         }
         RegisterWallBox(box.right.wall, box);
 
@@ -124,7 +124,7 @@ public class WorldGenerator : MonoBehaviour
             frontBox.back.box = box;
         } else
         {
-            box.front.wall = SpawnWall(forward, WallNormalDirection.Z);
+            box.front.wall = SpawnWall(forward, WallNormalDirection.Z, pos);
         }
         RegisterWallBox(box.front.wall, box);
 
@@ -136,7 +136,7 @@ public class WorldGenerator : MonoBehaviour
             backBox.front.box = box;
         } else
         {
-            box.back.wall = SpawnWall(pos, WallNormalDirection.Z);
+            box.back.wall = SpawnWall(pos, WallNormalDirection.Z, pos);
         }
         RegisterWallBox(box.back.wall, box);
 
@@ -181,6 +181,15 @@ public class WorldGenerator : MonoBehaviour
         FillBox(pos, Vector3.zero);
     }
 
+    /// <summary>
+    /// Determines how many bots to spawn for a given box position.
+    /// Override this to customize bot density per room.
+    /// </summary>
+    protected virtual int GetBotCount(Vector3Int pos)
+    {
+        return (Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z)) * 15;
+    }
+
     public void FillBox(Vector3Int pos, Vector3 openingDirection)
     {
         if (_filledBoxes.Contains(pos) ||
@@ -197,7 +206,8 @@ public class WorldGenerator : MonoBehaviour
 
         CleanupMissingBots();
 
-        for (int i = 0; i < _botsPerBox; i++)
+        int botCount = GetBotCount(pos);
+        for (int i = 0; i < botCount; i++)
         {
             AIInput bot = Instantiate(_botPrefab, GetBotSpawnPosition(pos, i), Quaternion.identity);
             bot.Target = _botTarget;
@@ -210,12 +220,23 @@ public class WorldGenerator : MonoBehaviour
         _filledBoxes.Add(pos);
     }
 
-    private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction)
+    /// <summary>
+    /// Determines wall max health based on the box's Manhattan distance from center.
+    /// Newly spawned walls use this; pre-existing shared walls keep their current HP.
+    /// </summary>
+    protected virtual int GetWallHealth(Vector3Int boxPos)
+    {
+        int manhattan = Mathf.Abs(boxPos.x) + Mathf.Abs(boxPos.y) + Mathf.Abs(boxPos.z);
+        return manhattan * 30 + 2;
+    }
+
+    private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction, Vector3Int boxPos)
     {
         GameObject wallObj = new($"Wall_{pos}_{direction}");
         wallObj.transform.SetParent(transform, false);
         
         Wall wall = wallObj.AddComponent<Wall>();
+        wall.MaxHealth = GetWallHealth(boxPos);
         wall.OnDestroy += () => HandleWallDestroyed(wall, pos, direction);
         Vector3 worldPos = pos;
         if (direction == WallNormalDirection.X)

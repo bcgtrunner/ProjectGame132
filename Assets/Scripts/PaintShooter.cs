@@ -31,6 +31,7 @@ public class PaintShooter : MonoBehaviour
                 {
                     var paint = Instantiate(Paint, hit.point, Quaternion.LookRotation(hit.normal) * Quaternion.LookRotation(Vector3.up));
                     paint.AttachTo(wall);
+                    wall.SetDamageColor(paint.GetComponent<MeshRenderer>()?.sharedMaterial?.GetColor("_BaseColor") ?? Color.red);
                     wall.Damage(WallDamage);
                 };
             }
