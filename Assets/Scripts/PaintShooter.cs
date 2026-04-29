@@ -4,13 +4,14 @@ using UnityEngine;
 public class PaintShooter : MonoBehaviour
 {
     public int WallDamage = 1;
-    public GameObject Paint;
+    public Paint Paint;
+    public Bullet Bullet;
 
     public void TryShoot(Vector3 dir)
     {
-        if (Paint == null)
+        if (Paint == null || Bullet == null)
         {
-            Debug.LogWarning($"PaintShooter on {name} cannot shoot because Paint prefab is not assigned.", this);
+            Debug.LogWarning($"PaintShooter on {name} cannot shoot because prefab is not assigned.", this);
             return;
         }
 
@@ -24,9 +25,14 @@ public class PaintShooter : MonoBehaviour
             
             if (hitGameObject.TryGetComponent<Wall>(out var wall))
             {
-                var paintObject = Instantiate(Paint, hit.point, Quaternion.LookRotation(hit.normal) * Quaternion.LookRotation(Vector3.up));
-                paintObject.GetComponent<Paint>().AttachTo(wall);
-                wall.Damage(WallDamage);
+                var bullet = Instantiate(Bullet, transform.position + dir * 2, Quaternion.identity);
+                bullet.Lauch(dir);
+                bullet.OnHit += () =>
+                {
+                    var paint = Instantiate(Paint, hit.point, Quaternion.LookRotation(hit.normal) * Quaternion.LookRotation(Vector3.up));
+                    paint.AttachTo(wall);
+                    wall.Damage(WallDamage);
+                };
             }
         }
     }
