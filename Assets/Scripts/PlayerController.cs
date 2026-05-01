@@ -32,6 +32,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _launchClearance = 0.1f;
     [SerializeField] private float _collisionSkin = 0.02f;
     [SerializeField] private double _maxHp = 6;
+    [SerializeField] private float _healRate = 0.1f;
     private double _currentHp;
 
     private enum PlayerState { Attached, Flying }
@@ -118,6 +119,11 @@ public class PlayerController : MonoBehaviour
         if (_state == PlayerState.Flying)
         {
             UpdateFlying();
+        }
+
+        if (_state == PlayerState.Attached && !IsTouchingPaint && _currentHp < _maxHp)
+        {
+            _currentHp = Mathf.Min((float)(_currentHp + _healRate * Time.deltaTime), (float)_maxHp);
         }
     }
 
