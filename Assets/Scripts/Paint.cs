@@ -18,14 +18,6 @@ public class Paint : MonoBehaviour
         }
     }
 
-    private void OnTriggerStay(Collider other)
-    {
-        if (other.TryGetComponent<PlayerController>(out var controller))
-        {
-            controller.TakeDamage(Time.deltaTime);
-        }
-    }
-
     private void OnTriggerExit(Collider other)
     {
         if (other.TryGetComponent<PlayerController>(out var controller))
