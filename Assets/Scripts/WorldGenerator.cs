@@ -187,7 +187,7 @@ public class WorldGenerator : MonoBehaviour
     /// </summary>
     protected virtual int GetBotCount(Vector3Int pos)
     {
-        return (Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z)) * 10;
+        return (Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z)) * 10 + 1;
     }
 
     /// <summary>
