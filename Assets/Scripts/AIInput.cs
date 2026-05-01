@@ -6,7 +6,7 @@ public class AIInput : MonoBehaviour
 {
     [SerializeField] private float _minWaitTime = 0.5f;
     [SerializeField] private float _maxWaitTime = 2.0f;
-    [SerializeField] private float _launchAimJitter = 0.35f;
+    [SerializeField] private float _launchAimJitter = 0.1f;
 
     private PlayerController _controller;
     private PaintShooter _shooter;
