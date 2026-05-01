@@ -41,6 +41,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 _flyingDirection;
     private Collider _attachedWallCollider;
     private Wall _attachedWall;
+    private int _paintTouchCount;
 
     public event Action<Vector3> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
@@ -49,7 +50,14 @@ public class PlayerController : MonoBehaviour
     public bool IsAlive => _currentHp > 0d;
     public double CurrentHp => _currentHp;
     public double MaxHp => _maxHp;
+    public bool IsTouchingPaint => _paintTouchCount > 0;
     public Collider AttachedWallCollider => _attachedWallCollider;
+
+    public void OnPaintContact(bool entered)
+    {
+        if (entered) _paintTouchCount++;
+        else _paintTouchCount--;
+    }
 
     public void TakeDamage(double amount)
     {
@@ -96,6 +104,10 @@ public class PlayerController : MonoBehaviour
             GUIStyle style = new(GUI.skin.label);
             style.fontSize = 48;
             style.fontStyle = FontStyle.Bold;
+            if (IsTouchingPaint)
+            {
+                style.normal.textColor = Color.red;
+            }
             int displayHp = Mathf.CeilToInt((float)_currentHp);
             GUI.Label(new Rect(20, 20, 300, 60), $"HP: {displayHp}", style);
         }
