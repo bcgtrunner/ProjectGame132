@@ -126,7 +126,11 @@ public class PlayerController : MonoBehaviour
             UpdateFlying();
         }
 
-        if (_state == PlayerState.Attached && !IsTouchingPaint && _currentHp < _maxHp)
+        if (IsTouchingPaint)
+        {
+            TakeDamage(Time.deltaTime);
+        }
+        else if (_state == PlayerState.Attached && _currentHp < _maxHp)
         {
             _currentHp = Mathf.Min((float)(_currentHp + _healRate * Time.deltaTime), (float)_maxHp);
         }
