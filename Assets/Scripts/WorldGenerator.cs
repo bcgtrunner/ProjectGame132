@@ -190,6 +190,16 @@ public class WorldGenerator : MonoBehaviour
         return (Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z)) * 15;
     }
 
+    /// <summary>
+    /// Determines bot max HP based on the box position.
+    /// Override this to customize bot toughness per room.
+    /// </summary>
+    protected virtual double GetBotHealth(Vector3Int pos)
+    {
+        int manhattan = Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z);
+        return manhattan * 0.5 + 0.1;
+    }
+
     public void FillBox(Vector3Int pos, Vector3 openingDirection)
     {
         if (_filledBoxes.Contains(pos) ||
@@ -211,6 +221,7 @@ public class WorldGenerator : MonoBehaviour
         {
             AIInput bot = Instantiate(_botPrefab, GetBotSpawnPosition(pos, i), Quaternion.identity);
             bot.Target = _botTarget;
+            bot.GetComponent<PlayerController>().SetMaxHp(GetBotHealth(pos));
             bot.Destroyed += HandleBotDestroyed;
             bots.Add(bot);
             bot.SetVirtualAttachment(GetSpawnSurfaceNormal(openingDirection));
