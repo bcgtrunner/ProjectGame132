@@ -47,6 +47,8 @@ public class WorldGenerator : MonoBehaviour
     public Dictionary<Wall, WallBoxes> wallBoxes = new();
     public List<AIInput> bots = new();
 
+    private float _score;
+    private bool _allBotsCleared;
     private Material _sharedWallMaterial;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private readonly HashSet<Vector3Int> _filledBoxes = new();
@@ -455,16 +457,30 @@ public class WorldGenerator : MonoBehaviour
         }
 
         bot.Destroyed -= HandleBotDestroyed;
+
+        // Add score proportional to bot's max HP
+        PlayerController botController = bot.GetComponent<PlayerController>();
+        if (botController != null)
+        {
+            _score += (float)botController.MaxHp;
+        }
+
         bots.Remove(bot);
 
-        // When the last alive bot is destroyed, spray paint over 100 frames (10 shots per frame)
-        if (bots.Count == 0 && _botTarget != null)
+        // When the last alive bot is destroyed, apply 1.5x multiplier and spray paint
+        if (bots.Count == 0 && !_allBotsCleared)
         {
-            PaintShooter playerShooter = _botTarget.GetComponent<PaintShooter>();
-            if (playerShooter != null)
+            _allBotsCleared = true;
+            _score *= 1.5f;
+
+            if (_botTarget != null)
             {
-                Vector3? surfaceNormal = _botTarget.IsAttached ? _botTarget.CurrentSurfaceNormal : null;
-                StartCoroutine(DeathBurstCoroutine(playerShooter, 10, _deathPaintScale, surfaceNormal));
+                PaintShooter playerShooter = _botTarget.GetComponent<PaintShooter>();
+                if (playerShooter != null)
+                {
+                    Vector3? surfaceNormal = _botTarget.IsAttached ? _botTarget.CurrentSurfaceNormal : null;
+                    StartCoroutine(DeathBurstCoroutine(playerShooter, 10, _deathPaintScale, surfaceNormal));
+                }
             }
         }
     }
@@ -476,6 +492,29 @@ public class WorldGenerator : MonoBehaviour
             shooter.ShootDeathBurst(shotsPerFrame, scale, surfaceNormal);
             yield return null;
         }
+    }
+
+    private void OnGUI()
+    {
+        if (_botTarget == null || !_botTarget.TryGetComponent<PlayerInput>(out _))
+        {
+            return;
+        }
+
+        string scoreText = _score.ToString("F1");
+        float textWidth = 200f;
+        float textHeight = 30f;
+        float x = (Screen.width - textWidth) * 0.5f;
+        float y = 10f;
+
+        GUIStyle style = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 24,
+            alignment = TextAnchor.MiddleCenter,
+            normal = { textColor = Color.white }
+        };
+
+        GUI.Label(new Rect(x, y, textWidth, textHeight), scoreText, style);
     }
 
     private void CleanupMissingBots()
