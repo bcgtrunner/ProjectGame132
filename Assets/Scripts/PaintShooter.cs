@@ -66,7 +66,7 @@ public class PaintShooter : MonoBehaviour
                     wall.SetDamageColor(
                         paint.GetComponent<MeshRenderer>()?.sharedMaterial?.GetColor("_BaseColor") ?? Color.red
                     );
-                    int areaDamage = Mathf.RoundToInt(WallDamage * scale * scale);
+                    float areaDamage = WallDamage * scale * scale;
                     wall.Damage(areaDamage);
                 };
             }
@@ -78,6 +78,28 @@ public class PaintShooter : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             Vector3 randomDir = UnityEngine.Random.onUnitSphere;
+            TryShoot(randomDir, scale);
+        }
+    }
+
+    /// <summary>
+    /// Fires paint bursts in directions appropriate for a death explosion.
+    /// If attached to a wall (surfaceNormal provided), only fires into the
+    /// outward-facing hemisphere so paint lands on the player's side.
+    /// If flying (surfaceNormal is null), fires in all directions.
+    /// </summary>
+    public void ShootDeathBurst(int count, float scale, Vector3? surfaceNormal = null)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 randomDir = UnityEngine.Random.onUnitSphere;
+
+            // If attached, constrain to the hemisphere facing away from the wall
+            if (surfaceNormal.HasValue && Vector3.Dot(randomDir, surfaceNormal.Value) < 0f)
+            {
+                randomDir = -randomDir;
+            }
+
             TryShoot(randomDir, scale);
         }
     }

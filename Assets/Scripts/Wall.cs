@@ -7,8 +7,8 @@ using UnityEngine;
 /// </summary>
 public class Wall : MonoBehaviour
 {
-    public int MaxHealth = 5;
-    public int Health { get; private set; }
+    public float MaxHealth = 5;
+    public float Health { get; private set; }
 
     public Action OnDestroy;
 
@@ -33,7 +33,7 @@ public class Wall : MonoBehaviour
         }
     }
 
-    public void Damage(int points)
+    public void Damage(float points)
     {
         if (Health <= 0) return;
         Health -= points;
@@ -55,7 +55,7 @@ public class Wall : MonoBehaviour
     {
         if (MaxHealth <= 0) return;
 
-        float t = 1f - (float)Health / MaxHealth;
+        float t = 1f - Mathf.Clamp01(Health / MaxHealth);
         Color currentColor = Color.Lerp(_initialColor, _damageColor, t);
 
         MeshRenderer renderer = GetComponent<MeshRenderer>();
