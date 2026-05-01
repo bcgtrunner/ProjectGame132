@@ -35,6 +35,7 @@ public class Wall : MonoBehaviour
 
     public void Damage(int points)
     {
+        if (Health <= 0) return;
         Health -= points;
         if (Health <= 0)
         {

@@ -5,27 +5,26 @@ public class Bullet : MonoBehaviour
 {
     public Rigidbody rb;
     public float Speed;
-    private Vector3 direction = Vector3.zero;
+    public Vector3 Direction = Vector3.zero;
 
-    public Action OnHit;
+    public Action<Collision> OnHit;
 
     public void Lauch(Vector3 dir)
     {
-        direction = dir;
+        Direction = dir;
     }
 
     private void FixedUpdate()
     {
-        if (direction != Vector3.zero)
+        if (Direction != Vector3.zero)
         {
-            rb.position += Speed * direction;
+            rb.position += Speed * Direction * Time.fixedDeltaTime;
         }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log(collision.collider.gameObject.name);
-        OnHit?.Invoke();
+        OnHit?.Invoke(collision);
         Destroy(gameObject);
     }
 }

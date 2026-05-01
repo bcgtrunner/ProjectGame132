@@ -62,13 +62,13 @@ public class AIInput : MonoBehaviour
     private IEnumerator WaitAndShoot()
     {
         isShooting = true;
-        float waitTime = Random.Range(_minWaitTime, _maxWaitTime) * 2;
+        float waitTime = Random.Range(_minWaitTime, _maxWaitTime * 2);
         yield return new WaitForSeconds(waitTime);
 
         while (_controller.IsAttached && Target != null)
         {
             Vector3 randomDir = Random.onUnitSphere;
-            if (Vector3.Dot(randomDir, (Target.transform.position - transform.position).normalized) > 0f)
+            if (Vector3.Angle(randomDir, Target.transform.position - transform.position) < 30f)
             {
                 _shooter.TryShoot(randomDir);
                 break;
