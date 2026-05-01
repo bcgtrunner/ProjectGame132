@@ -102,15 +102,20 @@ public class PlayerController : MonoBehaviour
     {
         if (TryGetComponent<PlayerInput>(out _))
         {
-            GUIStyle style = new(GUI.skin.label);
-            style.fontSize = 48;
-            style.fontStyle = FontStyle.Bold;
+            float hpRatio = (float)(_currentHp / _maxHp);
+            float barHeight = 20f;
+            float barY = Screen.height - barHeight;
+            float barWidth = Screen.width;
+
+            Color barColor = Color.white;
             if (IsTouchingPaint)
-            {
-                style.normal.textColor = Color.red;
-            }
-            int displayHp = Mathf.CeilToInt((float)_currentHp);
-            GUI.Label(new Rect(20, 20, 300, 60), $"HP: {displayHp}", style);
+                barColor = Color.red;
+            else if (_state == PlayerState.Attached && _currentHp < _maxHp)
+                barColor = Color.green;
+
+            GUI.color = barColor;
+            GUI.DrawTexture(new Rect(0, barY, barWidth * hpRatio, barHeight), Texture2D.whiteTexture);
+            GUI.color = Color.white;
         }
     }
 
