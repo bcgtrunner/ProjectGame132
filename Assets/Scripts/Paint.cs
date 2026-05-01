@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class Paint : MonoBehaviour
 {
@@ -11,15 +10,11 @@ public class Paint : MonoBehaviour
         wall.OnDestroy += Destroy;
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
-        if (other.TryGetComponent<PlayerInput>(out var player))
+        if (other.TryGetComponent<PlayerController>(out var controller))
         {
-            SceneManager.LoadScene(0);
-        }
-        else if (other.TryGetComponent<PlayerController>(out var controller))
-        {
-            Destroy(controller.gameObject);
+            controller.TakeDamage(Time.deltaTime);
         }
     }
 

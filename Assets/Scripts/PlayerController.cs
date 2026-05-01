@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using Unity.VisualScripting;
+using UnityEngine.SceneManagement;
 
 public class Cooldown
 {
@@ -30,6 +31,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _flySpeed = 10f;
     [SerializeField] private float _launchClearance = 0.1f;
     [SerializeField] private float _collisionSkin = 0.02f;
+    [SerializeField] private double _maxHp = 6;
+    private double _currentHp;
 
     private enum PlayerState { Attached, Flying }
 
@@ -37,18 +40,51 @@ public class PlayerController : MonoBehaviour
     private PlayerState _state = PlayerState.Attached;
     private Vector3 _flyingDirection;
     private Collider _attachedWallCollider;
+    private Wall _attachedWall;
 
     public event Action<Vector3> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
     public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
     public bool IsAttached => _state == PlayerState.Attached;
+    public bool IsAlive => _currentHp > 0d;
     public Collider AttachedWallCollider => _attachedWallCollider;
+
+    public void TakeDamage(double amount)
+    {
+        _currentHp -= amount;
+        if (_currentHp <= 0)
+        {
+            if (TryGetComponent<PlayerInput>(out _))
+            {
+                SceneManager.LoadScene(0);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+    }
+
+    private void UnsubscribeFromWall()
+    {
+        if (_attachedWall != null)
+        {
+            _attachedWall.OnDestroy -= OnWallDestroyed;
+            _attachedWall = null;
+        }
+    }
 
     private Cooldown _takeoffCooldown = new(1f);
 
     private void Awake()
     {
         _playerCollider = GetComponent<Collider>();
+        _currentHp = _maxHp;
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeFromWall();
     }
 
     private void Update()
@@ -59,9 +95,18 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void OnWallDestroyed()
+    {
+        _attachedWall = null;
+        _attachedWallCollider = null;
+        TakeDamage(_currentHp);
+    }
+
     public void TryLaunch(Vector3 direction)
     {
         if (_state != PlayerState.Attached || IsTakeoffOnCooldown) return;
+
+        UnsubscribeFromWall();
 
         _flyingDirection = direction.normalized;
 
@@ -81,6 +126,7 @@ public class PlayerController : MonoBehaviour
         CurrentSurfaceNormal = surfaceNormal.sqrMagnitude > Mathf.Epsilon
             ? surfaceNormal.normalized
             : Vector3.up;
+        UnsubscribeFromWall();
         _attachedWallCollider = null;
         _state = PlayerState.Attached;
         AttachedToWall?.Invoke(CurrentSurfaceNormal);
@@ -115,7 +161,13 @@ public class PlayerController : MonoBehaviour
     {
         _takeoffCooldown.Reset();
         TeleportToSurface(hit);
+        UnsubscribeFromWall();
         _attachedWallCollider = hit.collider;
+        _attachedWall = hit.collider.GetComponent<Wall>();
+        if (_attachedWall != null)
+        {
+            _attachedWall.OnDestroy += OnWallDestroyed;
+        }
         _state = PlayerState.Attached;
     }
 
