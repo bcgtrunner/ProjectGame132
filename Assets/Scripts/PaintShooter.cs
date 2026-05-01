@@ -64,4 +64,13 @@ public class PaintShooter : MonoBehaviour
             }
         }
     }
+
+    public void ShootAllDirections(int count = 100, float scale = 1f)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 randomDir = UnityEngine.Random.onUnitSphere;
+            TryShoot(randomDir, scale);
+        }
+    }
 }
