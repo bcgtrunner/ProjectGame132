@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class PaintShooter : MonoBehaviour
 {
+    public float PlayerDamage = 3;
     public int WallDamage = 1;
     public Paint Paint;
     public Bullet Bullet;
@@ -34,8 +35,15 @@ public class PaintShooter : MonoBehaviour
                 {
                     var hitGameObject = collision.collider.gameObject;
 
+                    if (hitGameObject.TryGetComponent<PlayerController>(out var player))
+                    {
+                        player.TakeDamage(PlayerDamage * scale * scale);
+                    }
+
                     if (!hitGameObject.TryGetComponent<Wall>(out var wall))
+                    {
                         return;
+                    }
 
                     ContactPoint bestContact = collision.contacts[0];
                     float bestDot = -Mathf.Infinity;
