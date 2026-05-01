@@ -187,7 +187,7 @@ public class WorldGenerator : MonoBehaviour
     /// </summary>
     protected virtual int GetBotCount(Vector3Int pos)
     {
-        return (Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z)) * 15;
+        return (Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z)) * 10;
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ public class WorldGenerator : MonoBehaviour
     protected virtual int GetWallHealth(Vector3Int boxPos)
     {
         int manhattan = Mathf.Abs(boxPos.x) + Mathf.Abs(boxPos.y) + Mathf.Abs(boxPos.z);
-        return manhattan * 120 + 10;
+        return manhattan * 30 + 8;
     }
 
     private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction, Vector3Int boxPos)
