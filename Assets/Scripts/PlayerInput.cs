@@ -80,5 +80,30 @@ public class PlayerInput : MonoBehaviour
         }
     }
 
+    private void OnGUI()
+    {
+        float barHeight = 8f;
+        float barWidth = 100f;
+        float x = 0f;
+        float y = Screen.height - 40f;
+
+        // Click cooldown bar
+        float clickProgress = Mathf.Clamp01(_clickCooldown.Progress());
+        GUI.color = Color.white;
+        GUI.DrawTexture(new Rect(x, y, barWidth, barHeight), Texture2D.whiteTexture);
+        GUI.color = Color.gray;
+        GUI.DrawTexture(new Rect(x, y, barWidth * clickProgress, barHeight), Texture2D.whiteTexture);
+
+        // Shot (spam) cooldown bar
+        float shotProgress = Mathf.Clamp01(_shotCooldown.Progress());
+        float shotY = y + barHeight + 2f;
+        GUI.color = Color.white;
+        GUI.DrawTexture(new Rect(x, shotY, barWidth, barHeight), Texture2D.whiteTexture);
+        GUI.color = Color.gray;
+        GUI.DrawTexture(new Rect(x, shotY, barWidth * shotProgress, barHeight), Texture2D.whiteTexture);
+
+        GUI.color = Color.white;
+    }
+
     private void OnDestroy() => _actions?.Dispose();
 }
