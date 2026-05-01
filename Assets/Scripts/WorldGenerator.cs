@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -40,6 +41,7 @@ public class WorldGenerator : MonoBehaviour
     [SerializeField] private AIInput _botPrefab;
     [SerializeField] private PlayerController _botTarget;
     [SerializeField] private int _botsPerBox = 10;
+    [SerializeField] private float _deathPaintScale = 1f;
 
     public Dictionary<Vector3Int, Box> boxes = new();
     public Dictionary<Wall, WallBoxes> wallBoxes = new();
@@ -454,6 +456,26 @@ public class WorldGenerator : MonoBehaviour
 
         bot.Destroyed -= HandleBotDestroyed;
         bots.Remove(bot);
+
+        // When the last alive bot is destroyed, spray paint over 100 frames (10 shots per frame)
+        if (bots.Count == 0 && _botTarget != null)
+        {
+            PaintShooter playerShooter = _botTarget.GetComponent<PaintShooter>();
+            if (playerShooter != null)
+            {
+                Vector3? surfaceNormal = _botTarget.IsAttached ? _botTarget.CurrentSurfaceNormal : null;
+                StartCoroutine(DeathBurstCoroutine(playerShooter, 10, _deathPaintScale, surfaceNormal));
+            }
+        }
+    }
+
+    private IEnumerator DeathBurstCoroutine(PaintShooter shooter, int shotsPerFrame, float scale, Vector3? surfaceNormal)
+    {
+        for (int frame = 0; frame < 100; frame++)
+        {
+            shooter.ShootDeathBurst(shotsPerFrame, scale, surfaceNormal);
+            yield return null;
+        }
     }
 
     private void CleanupMissingBots()
