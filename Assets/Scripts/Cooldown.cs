@@ -20,4 +20,9 @@ public class Cooldown
     {
         return Time.time - _lastReset >= _duration;
     }
+
+    public float Progress()
+    {
+        return (Time.time - _lastReset) / _duration;
+    }
 }
