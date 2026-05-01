@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(PlayerController))]
 public class PlayerInput : MonoBehaviour
@@ -31,7 +32,14 @@ public class PlayerInput : MonoBehaviour
             Vector3 direction = Camera.main.transform.forward;
             _controller.TryLaunch(direction);
         }
-        else if (_actions.UI.RightClick.WasPressedThisFrame())
+
+        if (_actions.UI.RightClick.WasPressedThisFrame())
+        {
+            Vector3 direction = Camera.main.transform.forward;
+            _shooter.TryShoot(direction);
+        }
+
+        if (_actions.UI.ScrollWheel.WasPerformedThisFrame())
         {
             Vector3 direction = Camera.main.transform.forward;
             _shooter.TryShoot(direction);
