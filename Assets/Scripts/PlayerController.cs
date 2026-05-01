@@ -47,6 +47,8 @@ public class PlayerController : MonoBehaviour
     public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
     public bool IsAttached => _state == PlayerState.Attached;
     public bool IsAlive => _currentHp > 0d;
+    public double CurrentHp => _currentHp;
+    public double MaxHp => _maxHp;
     public Collider AttachedWallCollider => _attachedWallCollider;
 
     public void TakeDamage(double amount)
@@ -85,6 +87,18 @@ public class PlayerController : MonoBehaviour
     private void OnDestroy()
     {
         UnsubscribeFromWall();
+    }
+
+    private void OnGUI()
+    {
+        if (TryGetComponent<PlayerInput>(out _))
+        {
+            GUIStyle style = new(GUI.skin.label);
+            style.fontSize = 48;
+            style.fontStyle = FontStyle.Bold;
+            int displayHp = Mathf.CeilToInt((float)_currentHp);
+            GUI.Label(new Rect(20, 20, 300, 60), $"HP: {displayHp}", style);
+        }
     }
 
     private void Update()
