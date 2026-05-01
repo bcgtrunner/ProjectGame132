@@ -406,6 +406,8 @@ MonoBehaviour:
   _flySpeed: 10
   _launchClearance: 0.02
   _collisionSkin: 0.02
+  _maxHp: 6
+  _healRate: 0.1
 --- !u!114 &485187042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -418,6 +420,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 914c0c1188d4fcb40875703adb27e417, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInput
+  _shotCooldownDuration: 0.05
+  _clickCooldownDuration: 0.3
+  _idleTimeLimit: 0.4
 --- !u!114 &485187043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1442,6 +1447,10 @@ PrefabInstance:
     - target: {fileID: 1116297047564477542, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2484666450189638920, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
+      propertyPath: WallDamage
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7496898296332208269, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
       propertyPath: m_Name

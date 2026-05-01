@@ -238,7 +238,7 @@ public class WorldGenerator : MonoBehaviour
     protected virtual int GetWallHealth(Vector3Int boxPos)
     {
         int manhattan = Mathf.Abs(boxPos.x) + Mathf.Abs(boxPos.y) + Mathf.Abs(boxPos.z);
-        return manhattan * 30 + 2;
+        return manhattan * 120 + 10;
     }
 
     private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction, Vector3Int boxPos)

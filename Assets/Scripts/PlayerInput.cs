@@ -9,9 +9,11 @@ public class PlayerInput : MonoBehaviour
     private InputSystem_Actions _actions;
 
     [SerializeField] private float _shotCooldownDuration = 0.05f;
+    [SerializeField] private float _clickCooldownDuration = 0.3f;
     [SerializeField] private float _idleTimeLimit = 0.4f;
 
     private Cooldown _shotCooldown;
+    private Cooldown _clickCooldown;
     private int _queuedShots;
     private float _lastWheelTime;
     private bool _hasWheelInput;
@@ -22,6 +24,7 @@ public class PlayerInput : MonoBehaviour
         _shooter = GetComponent<PaintShooter>();
         _actions = new InputSystem_Actions();
         _shotCooldown = new Cooldown(_shotCooldownDuration);
+        _clickCooldown = new Cooldown(_clickCooldownDuration);
     }
 
     private void Start()
@@ -38,10 +41,11 @@ public class PlayerInput : MonoBehaviour
     {
         Vector3 direction = Camera.main != null ? Camera.main.transform.forward : transform.forward;
 
-        // Left click = shoot
-        if (_actions.UI.Click.WasPressedThisFrame())
+        // Left click = shoot (bigger projectile, rate-limited)
+        if (_actions.UI.Click.WasPressedThisFrame() && _clickCooldown.Over())
         {
-            _shooter.TryShoot(direction);
+            _shooter.TryShoot(direction, 2f);
+            _clickCooldown.Reset();
         }
 
         // Right click = launch

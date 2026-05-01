@@ -7,7 +7,7 @@ using UnityEngine;
 /// </summary>
 public class Wall : MonoBehaviour
 {
-    public int MaxHealth = 20;
+    public int MaxHealth = 5;
     public int Health { get; private set; }
 
     public Action OnDestroy;
