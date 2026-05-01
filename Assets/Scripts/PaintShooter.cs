@@ -7,7 +7,7 @@ public class PaintShooter : MonoBehaviour
     public Paint Paint;
     public Bullet Bullet;
 
-    public void TryShoot(Vector3 dir)
+    public void TryShoot(Vector3 dir, float scale = 1f)
     {
         if (Paint == null || Bullet == null)
         {
@@ -26,13 +26,16 @@ public class PaintShooter : MonoBehaviour
             if (hitGameObject.TryGetComponent<Wall>(out var wall))
             {
                 var bullet = Instantiate(Bullet, transform.position + dir * 2, Quaternion.identity);
+                bullet.transform.localScale *= scale;
                 bullet.Lauch(dir);
                 bullet.OnHit += () =>
                 {
                     var paint = Instantiate(Paint, hit.point, Quaternion.LookRotation(hit.normal) * Quaternion.LookRotation(Vector3.up));
+                    paint.transform.localScale *= scale;
                     paint.AttachTo(wall);
                     wall.SetDamageColor(paint.GetComponent<MeshRenderer>()?.sharedMaterial?.GetColor("_BaseColor") ?? Color.red);
-                    wall.Damage(WallDamage);
+                    int areaDamage = Mathf.RoundToInt(WallDamage * scale * scale);
+                    wall.Damage(areaDamage);
                 };
             }
         }
