@@ -60,6 +60,12 @@ public class PlayerController : MonoBehaviour
         else _paintTouchCount--;
     }
 
+    public void SetMaxHp(double maxHp)
+    {
+        _maxHp = maxHp;
+        _currentHp = Math.Min(_currentHp, maxHp);
+    }
+
     public void TakeDamage(double amount)
     {
         _currentHp -= amount;
