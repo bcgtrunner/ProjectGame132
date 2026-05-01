@@ -3,28 +3,6 @@ using System;
 using Unity.VisualScripting;
 using UnityEngine.SceneManagement;
 
-public class Cooldown
-{
-    private readonly float _duration;
-    private float _lastReset;
-
-    public Cooldown(float duration)
-    {
-        _duration = duration;
-        _lastReset = -duration;
-    }
-
-    public void Reset()
-    {
-        _lastReset = Time.time;
-    }
-
-    public bool Over()
-    {
-        return Time.time - _lastReset >= _duration;
-    }
-}
-
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private Vector3 _wallTouchingSideLocalNormal = Vector3.down;

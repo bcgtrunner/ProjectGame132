@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(PlayerController))]
 public class PlayerInput : MonoBehaviour
@@ -7,11 +8,20 @@ public class PlayerInput : MonoBehaviour
     private PaintShooter _shooter;
     private InputSystem_Actions _actions;
 
+    [SerializeField] private float _shotCooldownDuration = 0.05f;
+    [SerializeField] private float _idleTimeLimit = 0.4f;
+
+    private Cooldown _shotCooldown;
+    private int _queuedShots;
+    private float _lastWheelTime;
+    private bool _hasWheelInput;
+
     private void Awake()
     {
         _controller = GetComponent<PlayerController>();
         _shooter = GetComponent<PaintShooter>();
         _actions = new InputSystem_Actions();
+        _shotCooldown = new Cooldown(_shotCooldownDuration);
     }
 
     private void Start()
@@ -26,15 +36,43 @@ public class PlayerInput : MonoBehaviour
 
     private void Update()
     {
+        Vector3 direction = Camera.main != null ? Camera.main.transform.forward : transform.forward;
+
+        // Left click = shoot
         if (_actions.UI.Click.WasPressedThisFrame())
         {
-            Vector3 direction = Camera.main.transform.forward;
+            _shooter.TryShoot(direction);
+        }
+
+        // Right click = launch
+        if (_actions.UI.RightClick.WasPressedThisFrame())
+        {
             _controller.TryLaunch(direction);
         }
-        else if (_actions.UI.RightClick.WasPressedThisFrame())
+
+        // Scroll wheel = queue shots
+        if (_actions.UI.ScrollWheel.WasPerformedThisFrame())
         {
-            Vector3 direction = Camera.main.transform.forward;
-            _shooter.TryShoot(direction);
+            _queuedShots++;
+            _lastWheelTime = Time.time;
+            _hasWheelInput = true;
+        }
+
+        // Process queued shots
+        if (_queuedShots > 0)
+        {
+            // If idle timeout has expired, discard remaining queue
+            if (_hasWheelInput && Time.time - _lastWheelTime >= _idleTimeLimit)
+            {
+                _queuedShots = 0;
+                _hasWheelInput = false;
+            }
+            else if (_shotCooldown.Over())
+            {
+                _shooter.TryShoot(direction);
+                _queuedShots--;
+                _shotCooldown.Reset();
+            }
         }
     }
 
