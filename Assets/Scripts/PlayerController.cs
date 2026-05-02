@@ -41,7 +41,7 @@ public class PlayerController : MonoBehaviour
     public void SetMaxHp(double maxHp)
     {
         _maxHp = maxHp;
-        _currentHp = Math.Min(_currentHp, maxHp);
+        _currentHp = maxHp;
     }
 
     public void TakeDamage(double amount)
