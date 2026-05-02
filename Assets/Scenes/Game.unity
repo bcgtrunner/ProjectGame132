@@ -435,6 +435,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07be1f56a16df7446aaec42cfa7438e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PaintShooter
+  BulletSpeed: 0
+  PlayerDamage: 0.5
   WallDamage: 1
   Paint: {fileID: 141112844746228153, guid: b29657ad1b7c1174b8c6dc53acac6393, type: 3}
   Bullet: {fileID: 7538472990877056731, guid: e87b13b2a46ec8341a0201f388617c8e, type: 3}
@@ -592,6 +594,56 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &774046959
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 774046961}
+  - component: {fileID: 774046960}
+  m_Layer: 0
+  m_Name: Game
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &774046960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 774046959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7ebde5fe092828408b037fcf93484ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  RoomsSinceLastBoss: 0
+  Enemies:
+  - {fileID: 109459262745567538, guid: 0c44832408154004f9601ac82b145df2, type: 3}
+  - {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
+  - {fileID: 109459262745567538, guid: 9ca813903dd56574aa0261bdc1dffe5c, type: 3}
+  Boss: {fileID: 109459262745567538, guid: 97d450991274a3441a99280f63e961c1, type: 3}
+--- !u!4 &774046961
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 774046959}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &957641012
 GameObject:
   m_ObjectHideFlags: 0
@@ -624,7 +676,9 @@ MonoBehaviour:
   _botPrefab: {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
   _botTarget: {fileID: 485187041}
   _botsPerBox: 10
+  _deathPaintScale: 1
   bots: []
+  _bossHpMultiplier: 500
 --- !u!4 &957641014
 Transform:
   m_ObjectHideFlags: 0
@@ -1480,3 +1534,4 @@ SceneRoots:
   - {fileID: 485187040}
   - {fileID: 957641014}
   - {fileID: 5656510015783761742}
+  - {fileID: 774046961}
