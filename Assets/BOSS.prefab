@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: -7784134256379187254}
   - component: {fileID: 2484666450189638920}
   m_Layer: 2
-  m_Name: Botik
+  m_Name: BOSS
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -33,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 2, y: 0.5, z: 2}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -132,7 +132,7 @@ MonoBehaviour:
   _flySpeed: 10
   _launchClearance: 0.02
   _collisionSkin: 0.02
-  _maxHp: 6
+  _maxHp: 500
   _healRate: 0.1
 --- !u!114 &109459262745567538
 MonoBehaviour:
@@ -194,7 +194,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PaintShooter
   BulletSpeed: 0
-  PlayerDamage: 0.6
+  PlayerDamage: 0.5
   WallDamage: 1
   Paint: {fileID: 141112844746228153, guid: b29657ad1b7c1174b8c6dc53acac6393, type: 3}
   Bullet: {fileID: 7538472990877056731, guid: e87b13b2a46ec8341a0201f388617c8e, type: 3}

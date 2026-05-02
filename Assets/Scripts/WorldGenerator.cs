@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AdaptivePerformance;
 
 public enum WallNormalDirection
 {
@@ -253,17 +254,25 @@ public class WorldGenerator : MonoBehaviour
 
         CleanupMissingBots();
 
-        // Try to spawn a boss instead of normal bots
-        if (TrySpawnBoss(pos, openingDirection))
+        var bossPrefab = GameManager.Instance.GetBoss(pos);
+        if (bossPrefab != null)
         {
-            _filledBoxes.Add(pos);
+            AIInput boss = Instantiate(bossPrefab, GetBotSpawnPosition(pos, 0), Quaternion.identity);
+            boss.Target = _botTarget;
+            var contr = boss.GetComponent<PlayerController>();
+            contr.SetMaxHp(GetBotHealth(pos) * contr.MaxHp);
+            boss.Destroyed += HandleBotDestroyed;
+            bots.Add(boss);
+            boss.SetVirtualAttachment(GetSpawnSurfaceNormal(openingDirection));
+            boss.LaunchImmediately();
             return;
         }
 
         int botCount = GetBotCount(pos);
         for (int i = 0; i < botCount; i++)
         {
-            AIInput bot = Instantiate(_botPrefab, GetBotSpawnPosition(pos, i), Quaternion.identity);
+            var prefab = GameManager.Instance.GetRandomEnemy(pos);
+            AIInput bot = Instantiate(prefab, GetBotSpawnPosition(pos, i), Quaternion.identity);
             bot.Target = _botTarget;
             bot.GetComponent<PlayerController>().SetMaxHp(GetBotHealth(pos));
             bot.Destroyed += HandleBotDestroyed;
