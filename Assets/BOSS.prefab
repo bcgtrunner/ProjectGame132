@@ -154,9 +154,9 @@ MonoBehaviour:
   _shootAttached: 0
   _shootAccuracy: 30
   _launchAimJitter: 0.35
-  _emitShrapnel: 1
+  _emitShrapnel: 0
   _shrapnelShotsPerFrame: 1
-  _shrapnelScale: 0.6
+  _shrapnelScale: 1.0
   Target: {fileID: 0}
 --- !u!54 &-7784134256379187254
 Rigidbody:
@@ -214,10 +214,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3baa284e21f478483552d40add8767d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SweepAttack
+  _idleDuration: 5
+  _activeDuration: 8
+  _shrapnelShotsPerFrame: 1
+  _shrapnelScale: 0.6
   _coneHalfAngle: 15
-  _shotsPerFrame: 5
-  _scale: 1
+  _sweepShotsPerFrame: 5
+  _sweepScale: 1
   _maxAngularSpeed: 90
   _maxAngularAcceleration: 400
   _maxJerk: 3000
   _targetChangeInterval: 2.5
+  _playerBias: 0.4
