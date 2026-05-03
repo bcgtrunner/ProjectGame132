@@ -11,6 +11,9 @@ public class AIInput : MonoBehaviour
     [SerializeField] private bool _shootAttached = false;
     [SerializeField] private float _shootAccuracy = 30f;
     [SerializeField] private float _launchAimJitter = 0.1f;
+    [SerializeField] private bool _emitShrapnel = false;
+    [SerializeField] private int _shrapnelShotsPerFrame = 3;
+    [SerializeField] private float _shrapnelScale = 0.3f;
 
     private PlayerController _controller;
     private PaintShooter _shooter;
@@ -23,6 +26,18 @@ public class AIInput : MonoBehaviour
     {
         _controller = GetComponent<PlayerController>();
         _shooter = GetComponent<PaintShooter>();
+        if (_emitShrapnel)
+            StartCoroutine(ShrapnelLoop());
+    }
+
+    private IEnumerator ShrapnelLoop()
+    {
+        while (true)
+        {
+            Vector3? normal = _controller.IsAttached ? _controller.CurrentSurfaceNormal : (Vector3?)null;
+            _shooter.ShootDeathBurst(_shrapnelShotsPerFrame, _shrapnelScale, normal);
+            yield return null;
+        }
     }
 
     public void LaunchImmediately()

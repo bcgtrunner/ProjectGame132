@@ -154,6 +154,9 @@ MonoBehaviour:
   _shootAttached: 0
   _shootAccuracy: 30
   _launchAimJitter: 0.35
+  _emitShrapnel: 1
+  _shrapnelShotsPerFrame: 3
+  _shrapnelScale: 0.3
   Target: {fileID: 0}
 --- !u!54 &-7784134256379187254
 Rigidbody:
