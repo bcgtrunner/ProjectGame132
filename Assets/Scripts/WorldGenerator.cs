@@ -386,7 +386,7 @@ public class WorldGenerator : MonoBehaviour
             if (bots[i] == null) continue;
 
             PlayerController controller = bots[i].GetComponent<PlayerController>();
-            if (controller != null && controller.AttachedWallCollider == wallCollider)
+            if (controller != null && controller.AttachedWallCollider == wallCollider && !controller.LaunchOnWallDestroyed)
             {
                 Destroy(bots[i].gameObject);
             }

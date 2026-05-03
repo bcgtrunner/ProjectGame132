@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _collisionSkin = 0.02f;
     [SerializeField] private float _maxHp = 6f;
     [SerializeField] private float _healRate = 0.1f;
+    [SerializeField] private bool _launchOnWallDestroyed = false;
     private float _currentHp;
 
     private enum PlayerState { Attached, Flying }
@@ -32,6 +33,7 @@ public class PlayerController : MonoBehaviour
     public float MaxHp => _maxHp;
     public bool IsTouchingPaint => _paintTouchCount > 0;
     public Collider AttachedWallCollider => _attachedWallCollider;
+    public bool LaunchOnWallDestroyed => _launchOnWallDestroyed;
 
     public void OnPaintContact(bool entered)
     {
@@ -126,7 +128,17 @@ public class PlayerController : MonoBehaviour
     {
         _attachedWall = null;
         _attachedWallCollider = null;
-        TakeDamage(_currentHp);
+        if (_launchOnWallDestroyed)
+        {
+            _flyingDirection = CurrentSurfaceNormal.sqrMagnitude > Mathf.Epsilon
+                ? CurrentSurfaceNormal.normalized
+                : UnityEngine.Random.onUnitSphere;
+            _state = PlayerState.Flying;
+        }
+        else
+        {
+            TakeDamage(_currentHp);
+        }
     }
 
     public void TryLaunch(Vector3 direction)
