@@ -12,7 +12,7 @@ public class AIInput : MonoBehaviour
     [SerializeField] private float _shootAccuracy = 30f;
     [SerializeField] private float _launchAimJitter = 0.1f;
     [SerializeField] private bool _emitShrapnel = false;
-    [SerializeField] private int _shrapnelShotsPerFrame = 3;
+    [SerializeField] private int _shrapnelShotsPerFrame = 10;
     [SerializeField] private float _shrapnelScale = 0.3f;
 
     private PlayerController _controller;
