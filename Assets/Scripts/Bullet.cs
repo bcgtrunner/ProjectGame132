@@ -9,7 +9,7 @@ public class Bullet : MonoBehaviour
 
     public Action<Collision> OnHit;
 
-    public void Lauch(Vector3 dir)
+    public void Launch(Vector3 dir)
     {
         Direction = dir;
     }

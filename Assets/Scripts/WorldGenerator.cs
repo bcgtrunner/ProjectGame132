@@ -43,15 +43,17 @@ public class WorldGenerator : MonoBehaviour
     [SerializeField] private int _botsPerBox = 10;
     [SerializeField] private float _deathPaintScale = 1f;
 
-    public Dictionary<Vector3Int, Box> boxes = new();
-    public Dictionary<Wall, WallBoxes> wallBoxes = new();
-    public List<AIInput> bots = new();
+    private Dictionary<Vector3Int, Box> boxes = new();
+    private Dictionary<Wall, WallBoxes> wallBoxes = new();
+    private List<AIInput> bots = new();
 
     private float _score;
     private bool _allBotsCleared;
     private int _roomsSinceLastBoss;
     [SerializeField] private float _bossHpMultiplier = 500f;
+    [SerializeField] private int _deathBurstFrames = 100;
     private Material _sharedWallMaterial;
+    private Mesh _cachedCubeMesh;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private readonly HashSet<Vector3Int> _filledBoxes = new();
 
@@ -211,6 +213,7 @@ public class WorldGenerator : MonoBehaviour
         boss.Target = _botTarget;
         boss.GetComponent<PlayerController>().SetMaxHp(GetBotHealth(pos) * _bossHpMultiplier);
         boss.Destroyed += HandleBotDestroyed;
+        _allBotsCleared = false;
         bots.Add(boss);
         boss.SetVirtualAttachment(GetSpawnSurfaceNormal(openingDirection));
         boss.LaunchImmediately();
@@ -231,10 +234,10 @@ public class WorldGenerator : MonoBehaviour
     /// Determines bot max HP based on the box position.
     /// Override this to customize bot toughness per room.
     /// </summary>
-    protected virtual double GetBotHealth(Vector3Int pos)
+    protected virtual float GetBotHealth(Vector3Int pos)
     {
         int manhattan = Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z);
-        return manhattan * 0.5 + 0.1;
+        return manhattan * 0.5f + 0.1f;
     }
 
     public void FillBox(Vector3Int pos, Vector3 openingDirection)
@@ -261,6 +264,7 @@ public class WorldGenerator : MonoBehaviour
         }
 
         int botCount = GetBotCount(pos);
+        _allBotsCleared = false;
         for (int i = 0; i < botCount; i++)
         {
             AIInput bot = Instantiate(_botPrefab, GetBotSpawnPosition(pos, i), Quaternion.identity);
@@ -292,7 +296,7 @@ public class WorldGenerator : MonoBehaviour
         
         Wall wall = wallObj.AddComponent<Wall>();
         wall.MaxHealth = GetWallHealth(boxPos);
-        wall.OnDestroy += () => HandleWallDestroyed(wall, pos, direction);
+        wall.Destroyed += () => HandleWallDestroyed(wall, pos, direction);
         Vector3 worldPos = pos;
         if (direction == WallNormalDirection.X)
         {
@@ -316,7 +320,9 @@ public class WorldGenerator : MonoBehaviour
         renderer.SetPropertyBlock(propertyBlock);
 
         MeshFilter filter = wallObj.AddComponent<MeshFilter>();
-        filter.sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+        if (_cachedCubeMesh == null)
+            _cachedCubeMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+        filter.sharedMesh = _cachedCubeMesh;
 
         wallObj.AddComponent<BoxCollider>();
 
@@ -444,7 +450,14 @@ public class WorldGenerator : MonoBehaviour
 
     private Vector3 GetBotSpawnPosition(Vector3Int boxPos, int botIndex)
     {
-        return new Vector3(boxPos.x * scale, boxPos.y * scale, boxPos.z * scale);
+        float inset = GetBotHalfHeight() + 1f;
+        float halfRoom = scale * 0.5f - inset;
+        Vector3 center = new Vector3(boxPos.x * scale, boxPos.y * scale, boxPos.z * scale);
+        if (halfRoom <= 0f) return center;
+        return center + new Vector3(
+            Random.Range(-halfRoom, halfRoom),
+            Random.Range(-halfRoom, halfRoom),
+            Random.Range(-halfRoom, halfRoom));
     }
 
     private float GetBotHalfHeight()
@@ -502,7 +515,7 @@ public class WorldGenerator : MonoBehaviour
         PlayerController botController = bot.GetComponent<PlayerController>();
         if (botController != null)
         {
-            _score += (float)botController.MaxHp;
+            _score += botController.MaxHp;
         }
 
         bots.Remove(bot);
@@ -527,7 +540,7 @@ public class WorldGenerator : MonoBehaviour
 
     private IEnumerator DeathBurstCoroutine(PaintShooter shooter, int shotsPerFrame, float scale, Vector3? surfaceNormal)
     {
-        for (int frame = 0; frame < 100; frame++)
+        for (int frame = 0; frame < _deathBurstFrames; frame++)
         {
             shooter.ShootDeathBurst(shotsPerFrame, scale, surfaceNormal);
             yield return null;

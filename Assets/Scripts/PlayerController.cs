@@ -9,13 +9,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _flySpeed = 10f;
     [SerializeField] private float _launchClearance = 0.1f;
     [SerializeField] private float _collisionSkin = 0.02f;
-    [SerializeField] private double _maxHp = 6;
+    [SerializeField] private float _maxHp = 6f;
     [SerializeField] private float _healRate = 0.1f;
-    private double _currentHp;
+    private float _currentHp;
 
     private enum PlayerState { Attached, Flying }
 
     private Collider _playerCollider;
+    private bool _isPlayerControlled;
     private PlayerState _state = PlayerState.Attached;
     private Vector3 _flyingDirection;
     private Collider _attachedWallCollider;
@@ -26,9 +27,9 @@ public class PlayerController : MonoBehaviour
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
     public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
     public bool IsAttached => _state == PlayerState.Attached;
-    public bool IsAlive => _currentHp > 0d;
-    public double CurrentHp => _currentHp;
-    public double MaxHp => _maxHp;
+    public bool IsAlive => _currentHp > 0f;
+    public float CurrentHp => _currentHp;
+    public float MaxHp => _maxHp;
     public bool IsTouchingPaint => _paintTouchCount > 0;
     public Collider AttachedWallCollider => _attachedWallCollider;
 
@@ -38,18 +39,18 @@ public class PlayerController : MonoBehaviour
         else _paintTouchCount--;
     }
 
-    public void SetMaxHp(double maxHp)
+    public void SetMaxHp(float maxHp)
     {
         _maxHp = maxHp;
         _currentHp = maxHp;
     }
 
-    public void TakeDamage(double amount)
+    public void TakeDamage(float amount)
     {
         _currentHp -= amount;
         if (_currentHp <= 0)
         {
-            if (TryGetComponent<PlayerInput>(out _))
+            if (_isPlayerControlled)
             {
                 SceneManager.LoadScene(0);
             }
@@ -64,7 +65,7 @@ public class PlayerController : MonoBehaviour
     {
         if (_attachedWall != null)
         {
-            _attachedWall.OnDestroy -= OnWallDestroyed;
+            _attachedWall.Destroyed -= OnWallDestroyed;
             _attachedWall = null;
         }
     }
@@ -74,6 +75,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         _playerCollider = GetComponent<Collider>();
+        _isPlayerControlled = TryGetComponent<PlayerInput>(out _);
         _currentHp = _maxHp;
     }
 
@@ -84,9 +86,9 @@ public class PlayerController : MonoBehaviour
 
     private void OnGUI()
     {
-        if (TryGetComponent<PlayerInput>(out _))
+        if (_isPlayerControlled)
         {
-            float hpRatio = (float)(_currentHp / _maxHp);
+            float hpRatio = _currentHp / _maxHp;
             float barHeight = 20f;
             float barY = Screen.height - barHeight;
             float barWidth = Screen.width;
@@ -116,7 +118,7 @@ public class PlayerController : MonoBehaviour
         }
         else if (_state == PlayerState.Attached && _currentHp < _maxHp)
         {
-            _currentHp = Mathf.Min((float)(_currentHp + _healRate * Time.deltaTime), (float)_maxHp);
+            _currentHp = Mathf.Min(_currentHp + _healRate * Time.deltaTime, _maxHp);
         }
     }
 
@@ -131,15 +133,14 @@ public class PlayerController : MonoBehaviour
     {
         if (_state != PlayerState.Attached || IsTakeoffOnCooldown) return;
 
-        UnsubscribeFromWall();
-
-        _flyingDirection = direction.normalized;
-
-        if (Vector3.Dot(_flyingDirection, -CurrentSurfaceNormal.normalized) > 0f)
+        Vector3 flyingDirection = direction.normalized;
+        if (Vector3.Dot(flyingDirection, -CurrentSurfaceNormal.normalized) > 0f)
         {
             return;
         }
 
+        UnsubscribeFromWall();
+        _flyingDirection = flyingDirection;
         transform.position += CurrentSurfaceNormal.normalized * _launchClearance;
         _attachedWallCollider = null;
         ResolveWallOverlaps();
@@ -191,7 +192,7 @@ public class PlayerController : MonoBehaviour
         _attachedWall = hit.collider.GetComponent<Wall>();
         if (_attachedWall != null)
         {
-            _attachedWall.OnDestroy += OnWallDestroyed;
+            _attachedWall.Destroyed += OnWallDestroyed;
         }
         _state = PlayerState.Attached;
     }
