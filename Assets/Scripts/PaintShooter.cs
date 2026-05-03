@@ -9,6 +9,13 @@ public class PaintShooter : MonoBehaviour
     public Paint Paint;
     public Bullet Bullet;
 
+    private Collider _collider;
+
+    private void Awake()
+    {
+        _collider = GetComponent<Collider>();
+    }
+
     public void TryShoot(Vector3 dir, float scale = 1f)
     {
         if (Paint == null || Bullet == null)
@@ -27,7 +34,11 @@ public class PaintShooter : MonoBehaviour
 
             if (hitGameObject.TryGetComponent<Wall>(out var wall))
             {
-                var bullet = Instantiate(Bullet, transform.position + dir * 2, Quaternion.identity);
+                float spawnOffset = _collider != null
+                    ? _collider.bounds.extents.magnitude + 0.5f
+                    : 2f;
+                spawnOffset = Mathf.Max(spawnOffset, 2f);
+                var bullet = Instantiate(Bullet, transform.position + dir * spawnOffset, Quaternion.identity);
                 bullet.transform.localScale *= scale;
                 bullet.Launch(dir, BulletSpeed);
                 bullet.OnHit += (collision) =>
