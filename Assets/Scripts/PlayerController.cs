@@ -74,12 +74,14 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private Cooldown _takeoffCooldown = new(1f);
+    [SerializeField] private float _takeoffCooldownDuration = 0.35f;
+    private Cooldown _takeoffCooldown;
 
     private void Awake()
     {
         _playerCollider = GetComponent<Collider>();
         _isPlayerControlled = TryGetComponent<PlayerInput>(out _);
+        _takeoffCooldown = new Cooldown(_takeoffCooldownDuration);
         _currentHp = _maxHp;
         _previousHp = _maxHp;
     }
