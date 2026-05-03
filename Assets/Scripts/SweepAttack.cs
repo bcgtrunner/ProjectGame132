@@ -5,41 +5,47 @@ public class SweepAttack : MonoBehaviour
     [SerializeField] private float _coneHalfAngle = 15f;
     [SerializeField] private int _shotsPerFrame = 5;
     [SerializeField] private float _scale = 1f;
-    [SerializeField] private float _maxAngularSpeed = 120f;        // deg/sec
-    [SerializeField] private float _maxAngularAcceleration = 200f; // deg/sec²
-    [SerializeField] private float _maxJerk = 800f;                // deg/sec³
-    [SerializeField] private float _arrivalAngle = 8f;
+    [SerializeField] private float _maxAngularSpeed = 90f;        // deg/sec
+    [SerializeField] private float _maxAngularAcceleration = 400f; // deg/sec²
+    [SerializeField] private float _maxJerk = 3000f;               // deg/sec³
+    [SerializeField] private float _targetChangeInterval = 2.5f;   // seconds between new targets
 
     private PaintShooter _shooter;
     private Vector3 _direction;
     private Vector3 _angularVelocity;
     private Vector3 _angularAcceleration;
     private Vector3 _targetDirection;
+    private float _targetTimer;
 
     private void Awake()
     {
         _shooter = GetComponent<PaintShooter>();
         _direction = Random.onUnitSphere;
         _targetDirection = Random.onUnitSphere;
+        _targetTimer = _targetChangeInterval;
     }
 
     private void Update()
     {
-        if (Vector3.Angle(_direction, _targetDirection) < _arrivalAngle)
+        _targetTimer -= Time.deltaTime;
+        if (_targetTimer <= 0f)
+        {
             _targetDirection = Random.onUnitSphere;
+            _targetTimer = Random.Range(_targetChangeInterval * 0.7f, _targetChangeInterval * 1.3f);
+        }
 
-        // Desired velocity: full speed toward target in tangent plane
+        // Desired velocity: max speed in the tangent-plane direction toward target
         Vector3 toTarget = Vector3.ProjectOnPlane(_targetDirection, _direction);
         Vector3 desiredVelocity = toTarget.sqrMagnitude > Mathf.Epsilon
             ? toTarget.normalized * _maxAngularSpeed
             : Vector3.zero;
 
-        // Desired acceleration: push velocity toward desired
-        Vector3 desiredAcceleration = (desiredVelocity - _angularVelocity);
+        // Desired acceleration: steer velocity toward desired
+        Vector3 desiredAcceleration = desiredVelocity - _angularVelocity;
         if (desiredAcceleration.magnitude > _maxAngularAcceleration)
             desiredAcceleration = desiredAcceleration.normalized * _maxAngularAcceleration;
 
-        // Jerk: push acceleration toward desired, clamped — this is what gives C2
+        // Jerk: steer acceleration toward desired — this is what gives C2
         Vector3 jerk = desiredAcceleration - _angularAcceleration;
         float maxJerkStep = _maxJerk * Time.deltaTime;
         if (jerk.magnitude > maxJerkStep)
