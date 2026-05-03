@@ -132,7 +132,7 @@ MonoBehaviour:
   _flySpeed: 10
   _launchClearance: 0.02
   _collisionSkin: 0.02
-  _maxHp: 500
+  _maxHp: 350
   _healRate: 0.1
   _launchOnWallDestroyed: 1
 --- !u!114 &109459262745567538
@@ -155,8 +155,8 @@ MonoBehaviour:
   _shootAccuracy: 30
   _launchAimJitter: 0.35
   _emitShrapnel: 1
-  _shrapnelShotsPerFrame: 3
-  _shrapnelScale: 0.3
+  _shrapnelShotsPerFrame: 1
+  _shrapnelScale: 0.6
   Target: {fileID: 0}
 --- !u!54 &-7784134256379187254
 Rigidbody:
