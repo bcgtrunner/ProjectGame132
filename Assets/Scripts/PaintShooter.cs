@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class PaintShooter : MonoBehaviour
 {
-    public float PlayerDamage = 3;
+    public float BulletSpeed = 0f;
+    public float PlayerDamage = 0.5f;
     public int WallDamage = 1;
     public Paint Paint;
     public Bullet Bullet;
@@ -28,7 +29,7 @@ public class PaintShooter : MonoBehaviour
             {
                 var bullet = Instantiate(Bullet, transform.position + dir * 2, Quaternion.identity);
                 bullet.transform.localScale *= scale;
-                bullet.Launch(dir);
+                bullet.Launch(dir, BulletSpeed);
                 bullet.OnHit += (collision) =>
                 {
                     var collisionObject = collision.collider.gameObject;
