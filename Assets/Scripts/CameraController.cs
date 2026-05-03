@@ -6,19 +6,15 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float _rotationSensitivity = 0.3f;
     [SerializeField] private float _minPitch = -80f;
     [SerializeField] private float _maxPitch = 80f;
-    [SerializeField] private float _attachTransitionDuration = 1f;
 
     private InputSystem_Actions _actions;
     private float _yaw;
     private float _pitch;
     private Quaternion _baseLocalRotation;
-    private Quaternion _attachStartLocalRotation;
-    private Quaternion _attachTargetLocalRotation;
     private Transform _playerTransform;
     private Camera _camera;
     private Quaternion _lastWorldRotation;
     private bool _hasLastWorldRotation;
-    private bool _isAttachTransitionActive;
 
     private void Awake()
     {
@@ -28,9 +24,7 @@ public class CameraController : MonoBehaviour
         _camera = GetComponent<Camera>();
 
         if (_playerController == null)
-        {
             _playerController = FindAnyObjectByType<PlayerController>();
-        }
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -56,15 +50,11 @@ public class CameraController : MonoBehaviour
         transform.localRotation = Quaternion.identity;
 
         if (_camera != null)
-        {
             _camera.nearClipPlane = 0.01f;
-        }
 
         MeshRenderer playerRenderer = _playerController.GetComponent<MeshRenderer>();
         if (playerRenderer != null)
-        {
             playerRenderer.enabled = false;
-        }
 
         _playerController.AttachedToWall += HandlePlayerAttachedToWall;
 
@@ -73,48 +63,16 @@ public class CameraController : MonoBehaviour
         _hasLastWorldRotation = true;
     }
 
-    private float _transitionTime;
-
     private Quaternion ComposeLocalRotation() => _baseLocalRotation * Quaternion.Euler(_pitch, _yaw, 0f);
 
     private void LateUpdate()
     {
         if (_playerTransform == null)
-        {
             return;
-        }
 
-        bool onCooldown = _playerController.IsTakeoffOnCooldown;
-
-        if (onCooldown)
-        {
-            _transitionTime += Time.deltaTime;
-            float t = _attachTransitionDuration > Mathf.Epsilon
-                ? Mathf.Clamp01(_transitionTime / _attachTransitionDuration)
-                : 1f;
-
-            if (_isAttachTransitionActive)
-            {
-                transform.localRotation = Quaternion.Slerp(_attachStartLocalRotation, _attachTargetLocalRotation, t);
-                _lastWorldRotation = transform.rotation;
-                _hasLastWorldRotation = true;
-                return;
-            }
-        }
-        else
-        {
-            if (_isAttachTransitionActive)
-            {
-                _isAttachTransitionActive = false;
-                _baseLocalRotation = _attachTargetLocalRotation;
-                _yaw = 0f;
-                _pitch = 0f;
-            }
-
-            Vector2 lookDelta = _actions.Player.Look.ReadValue<Vector2>();
-            _yaw += lookDelta.x * _rotationSensitivity;
-            _pitch = Mathf.Clamp(_pitch - lookDelta.y * _rotationSensitivity, _minPitch, _maxPitch);
-        }
+        Vector2 lookDelta = _actions.Player.Look.ReadValue<Vector2>();
+        _yaw += lookDelta.x * _rotationSensitivity;
+        _pitch = Mathf.Clamp(_pitch - lookDelta.y * _rotationSensitivity, _minPitch, _maxPitch);
 
         transform.localPosition = Vector3.zero;
         transform.localRotation = ComposeLocalRotation();
@@ -124,20 +82,12 @@ public class CameraController : MonoBehaviour
 
     private void HandlePlayerAttachedToWall(Vector3 surfaceNormal)
     {
+        // Preserve world-space camera direction across the parent rotation snap
         Quaternion preservedWorldRotation = _hasLastWorldRotation ? _lastWorldRotation : transform.rotation;
-        Quaternion preservedLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * preservedWorldRotation;
-        Vector3 currentForward = preservedWorldRotation * Vector3.forward;
-        Vector3 targetForward = surfaceNormal.normalized;
-        Quaternion shortestDelta = Quaternion.FromToRotation(currentForward, targetForward);
-        Quaternion targetWorldRotation = shortestDelta * preservedWorldRotation;
-
-        _attachStartLocalRotation = preservedLocalRotation;
-        _attachTargetLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * targetWorldRotation;
-        _isAttachTransitionActive = true;
-
-        // Apply immediately so the parent snap is canceled before the transition begins.
-        transform.localRotation = _attachStartLocalRotation;
-        _transitionTime = 0f;
+        _baseLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * preservedWorldRotation;
+        _yaw = 0f;
+        _pitch = 0f;
+        transform.localRotation = ComposeLocalRotation();
     }
 
     private void OnGUI()
@@ -165,9 +115,7 @@ public class CameraController : MonoBehaviour
     private void OnDestroy()
     {
         if (_playerController != null)
-        {
             _playerController.AttachedToWall -= HandlePlayerAttachedToWall;
-        }
 
         _actions?.Dispose();
     }
