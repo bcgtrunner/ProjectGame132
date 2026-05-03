@@ -202,3 +202,21 @@ MonoBehaviour:
   WallDamage: 1
   Paint: {fileID: 141112844746228153, guid: b29657ad1b7c1174b8c6dc53acac6393, type: 3}
   Bullet: {fileID: 7538472990877056731, guid: e87b13b2a46ec8341a0201f388617c8e, type: 3}
+--- !u!114 &3399716694662832702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7496898296332208269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3baa284e21f478483552d40add8767d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SweepAttack
+  _coneHalfAngle: 15
+  _shotsPerFrame: 5
+  _scale: 1
+  _maxAngularSpeed: 120
+  _angularAcceleration: 200
+  _arrivalAngle: 8
