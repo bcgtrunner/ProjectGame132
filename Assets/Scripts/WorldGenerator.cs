@@ -49,9 +49,7 @@ public class WorldGenerator : MonoBehaviour
 
     private float _score;
     private bool _allBotsCleared;
-    private int _roomsSinceLastBoss;
     private AIInput _currentBoss;
-    [SerializeField] private float _bossHpMultiplier = 500f;
     [SerializeField] private int _deathBurstFrames = 100;
     private Material _sharedWallMaterial;
     private Mesh _cachedCubeMesh;
@@ -190,37 +188,6 @@ public class WorldGenerator : MonoBehaviour
         FillBox(pos, Vector3.zero);
     }
 
-    private bool TrySpawnBoss(Vector3Int pos, Vector3 openingDirection)
-    {
-        if (_roomsSinceLastBoss < 10)
-        {
-            _roomsSinceLastBoss++;
-            return false;
-        }
-
-        float chance = (_roomsSinceLastBoss - 9) * 0.1f;
-        if (Random.value >= chance)
-        {
-            _roomsSinceLastBoss++;
-            return false;
-        }
-
-        // Boss spawns
-        Debug.Log($"BOSS spawned at room {pos}");
-        _roomsSinceLastBoss = 0;
-
-        AIInput boss = Instantiate(_botPrefab, GetBotSpawnPosition(pos, 0), Quaternion.identity);
-        boss.transform.localScale *= 10f;
-        boss.Target = _botTarget;
-        boss.GetComponent<PlayerController>().SetMaxHp(GetBotHealth(pos) * _bossHpMultiplier);
-        boss.Destroyed += HandleBotDestroyed;
-        _allBotsCleared = false;
-        bots.Add(boss);
-        boss.SetVirtualAttachment(GetSpawnSurfaceNormal(openingDirection));
-        boss.LaunchImmediately();
-
-        return true;
-    }
 
     /// <summary>
     /// Determines how many bots to spawn for a given box position.

@@ -5,7 +5,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    public int RoomsSinceLastBoss = 0;
+    private int _roomsSinceLastBoss;
 
     public List<AIInput> Enemies;
     public AIInput Boss;
@@ -20,6 +20,12 @@ public class GameManager : MonoBehaviour
 
     public AIInput GetRandomEnemy(Vector3Int pos)
     {
+        if (Enemies == null || Enemies.Count == 0)
+        {
+            Debug.LogError("GameManager has no enemies assigned.", this);
+            return null;
+        }
+
         int sum = pos.x + pos.y + pos.z;
 
         float[] weights = new float[Enemies.Count];
@@ -56,21 +62,21 @@ public class GameManager : MonoBehaviour
 
     public AIInput GetBoss(Vector3Int pos)
     {
-        if (RoomsSinceLastBoss < 10)
+        if (_roomsSinceLastBoss < 10)
         {
-            RoomsSinceLastBoss++;
+            _roomsSinceLastBoss++;
             return null;
         }
 
-        float chance = (RoomsSinceLastBoss - 9) * 0.1f;
+        float chance = (_roomsSinceLastBoss - 9) * 0.1f;
         if (Random.value >= chance)
         {
-            RoomsSinceLastBoss++;
+            _roomsSinceLastBoss++;
             return null;
         }
 
         Debug.Log($"BOSS spawned at room {pos}");
-        RoomsSinceLastBoss = 0;
+        _roomsSinceLastBoss = 0;
 
         return Boss;
     }
