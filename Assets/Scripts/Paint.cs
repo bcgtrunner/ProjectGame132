@@ -7,7 +7,7 @@ public class Paint : MonoBehaviour
     public void AttachTo(Wall wall)
     {
         attachedWall = wall;
-        wall.OnDestroy += Destroy;
+        wall.Destroyed += Destroy;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -33,6 +33,7 @@ public class Paint : MonoBehaviour
 
     private void OnDestroy()
     {
-        attachedWall.OnDestroy -= Destroy;
+        if (attachedWall != null)
+            attachedWall.Destroyed -= Destroy;
     }
 }

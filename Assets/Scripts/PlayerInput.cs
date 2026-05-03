@@ -17,6 +17,7 @@ public class PlayerInput : MonoBehaviour
     private int _queuedShots;
     private float _lastWheelTime;
     private bool _hasWheelInput;
+    private Camera _camera;
 
     private void Awake()
     {
@@ -29,8 +30,9 @@ public class PlayerInput : MonoBehaviour
 
     private void Start()
     {
+        _camera = Camera.main;
         _controller.SetVirtualAttachment(Vector3.up);
-        Vector3 launchDirection = Camera.main != null ? Camera.main.transform.forward : transform.forward;
+        Vector3 launchDirection = _camera != null ? _camera.transform.forward : transform.forward;
         _controller.TryLaunch(launchDirection);
     }
 
@@ -39,7 +41,7 @@ public class PlayerInput : MonoBehaviour
 
     private void Update()
     {
-        Vector3 direction = Camera.main != null ? Camera.main.transform.forward : transform.forward;
+        Vector3 direction = _camera != null ? _camera.transform.forward : transform.forward;
 
         // Left click = shoot (bigger projectile, rate-limited)
         if (_actions.UI.Click.WasPressedThisFrame() && _clickCooldown.Over())
@@ -57,7 +59,7 @@ public class PlayerInput : MonoBehaviour
         // Scroll wheel = queue shots
         if (_actions.UI.ScrollWheel.ReadValue<Vector2>() != Vector2.zero)
         {
-            Debug.Log(_queuedShots);
+            // Debug.Log(_queuedShots);
             _queuedShots++;
             _lastWheelTime = Time.time;
             _hasWheelInput = true;

@@ -12,7 +12,7 @@ public class AIInput : MonoBehaviour
     private PaintShooter _shooter;
     private bool isLaunching = false;
     private bool isShooting = false;
-    public PlayerController Target;
+    public PlayerController Target { get; set; }
     public event System.Action<AIInput> Destroyed;
 
     private void Awake()
@@ -73,6 +73,7 @@ public class AIInput : MonoBehaviour
                 _shooter.TryShoot(randomDir);
                 break;
             }
+            yield return null;
         }
         isShooting = false;
     }

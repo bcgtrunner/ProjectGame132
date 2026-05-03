@@ -1,5 +1,4 @@
 using System.Linq;
-using Unity.Mathematics;
 using UnityEngine;
 
 public class PaintShooter : MonoBehaviour
@@ -20,27 +19,26 @@ public class PaintShooter : MonoBehaviour
         if (Physics.Raycast(transform.position, dir, out var hit, 300f, 1))
         {
             GameObject hitGameObject = hit.collider.gameObject;
-            if (hitGameObject.TryGetComponent<Paint>(out var p))
+            if (hitGameObject.TryGetComponent<Paint>(out _))
             {
                 return;
             }
-            
+
             if (hitGameObject.TryGetComponent<Wall>(out var wall))
             {
                 var bullet = Instantiate(Bullet, transform.position + dir * 2, Quaternion.identity);
                 bullet.transform.localScale *= scale;
-                bullet.Lauch(dir);
-                Vector3 pos = transform.position;
+                bullet.Launch(dir);
                 bullet.OnHit += (collision) =>
                 {
-                    var hitGameObject = collision.collider.gameObject;
+                    var collisionObject = collision.collider.gameObject;
 
-                    if (hitGameObject.TryGetComponent<PlayerController>(out var player))
+                    if (collisionObject.TryGetComponent<PlayerController>(out var player))
                     {
                         player.TakeDamage(PlayerDamage * scale * scale);
                     }
 
-                    if (!hitGameObject.TryGetComponent<Wall>(out var wall))
+                    if (!collisionObject.TryGetComponent<Wall>(out var hitWall))
                     {
                         return;
                     }
@@ -61,13 +59,13 @@ public class PaintShooter : MonoBehaviour
 
                     var paint = Instantiate(Paint, bestContact.point, Quaternion.LookRotation(bestContact.normal) * Quaternion.LookRotation(Vector3.up));
                     paint.transform.localScale *= scale;
-                    paint.AttachTo(wall);
+                    paint.AttachTo(hitWall);
 
-                    wall.SetDamageColor(
+                    hitWall.SetDamageColor(
                         paint.GetComponent<MeshRenderer>()?.sharedMaterial?.GetColor("_BaseColor") ?? Color.red
                     );
                     float areaDamage = WallDamage * scale * scale;
-                    wall.Damage(areaDamage);
+                    hitWall.Damage(areaDamage);
                 };
             }
         }

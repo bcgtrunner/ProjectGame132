@@ -10,22 +10,24 @@ public class Wall : MonoBehaviour
     public float MaxHealth = 5;
     public float Health { get; private set; }
 
-    public Action OnDestroy;
+    public Action Destroyed;
 
     private Color _initialColor;
     private Color _damageColor = Color.red;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private MeshRenderer _renderer;
+    private MaterialPropertyBlock _propertyBlock;
 
     private void Start()
     {
         Health = MaxHealth;
 
-        MeshRenderer renderer = GetComponent<MeshRenderer>();
-        if (renderer != null)
+        _renderer = GetComponent<MeshRenderer>();
+        _propertyBlock = new MaterialPropertyBlock();
+        if (_renderer != null)
         {
-            MaterialPropertyBlock propertyBlock = new();
-            renderer.GetPropertyBlock(propertyBlock);
-            _initialColor = propertyBlock.HasProperty(BaseColorId) ? propertyBlock.GetColor(BaseColorId) : Color.white;
+            _renderer.GetPropertyBlock(_propertyBlock);
+            _initialColor = _propertyBlock.HasProperty(BaseColorId) ? _propertyBlock.GetColor(BaseColorId) : Color.white;
         }
         else
         {
@@ -53,23 +55,18 @@ public class Wall : MonoBehaviour
 
     private void UpdateColor()
     {
-        if (MaxHealth <= 0) return;
+        if (MaxHealth <= 0 || _renderer == null) return;
 
         float t = 1f - Mathf.Clamp01(Health / MaxHealth);
         Color currentColor = Color.Lerp(_initialColor, _damageColor, t);
 
-        MeshRenderer renderer = GetComponent<MeshRenderer>();
-        if (renderer == null) return;
-
-        MaterialPropertyBlock propertyBlock = new();
-        renderer.GetPropertyBlock(propertyBlock);
-        propertyBlock.SetColor(BaseColorId, currentColor);
-        renderer.SetPropertyBlock(propertyBlock);
+        _propertyBlock.SetColor(BaseColorId, currentColor);
+        _renderer.SetPropertyBlock(_propertyBlock);
     }
 
     private void Destroy()
     {
-        OnDestroy?.Invoke();
+        Destroyed?.Invoke();
         Destroy(gameObject);
     }
 }
