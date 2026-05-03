@@ -6,6 +6,10 @@ public class AIInput : MonoBehaviour
 {
     [SerializeField] private float _minWaitTime = 0.5f;
     [SerializeField] private float _maxWaitTime = 2.0f;
+    [SerializeField] private float _minShootDelay = 2.0f;
+    [SerializeField] private float _maxShootDelay = 2.0f;
+    [SerializeField] private bool _shootAttached = false;
+    [SerializeField] private float _shootAccuracy = 30f;
     [SerializeField] private float _launchAimJitter = 0.1f;
 
     private PlayerController _controller;
@@ -42,6 +46,9 @@ public class AIInput : MonoBehaviour
         if (_controller.IsAttached && !isLaunching && !isShooting)
         {
             StartCoroutine(WaitAndLaunch());
+        }
+        if ((_controller.IsAttached || !_shootAttached) && !isShooting)
+        {
             StartCoroutine(WaitAndShoot());
         }
     }
@@ -62,19 +69,20 @@ public class AIInput : MonoBehaviour
     private IEnumerator WaitAndShoot()
     {
         isShooting = true;
-        float waitTime = Random.Range(_minWaitTime, _maxWaitTime * 2);
+        float waitTime = Random.Range(_minShootDelay, _maxShootDelay);
         yield return new WaitForSeconds(waitTime);
 
-        while (_controller.IsAttached && Target != null)
+        while (Target != null)
         {
             Vector3 randomDir = Random.onUnitSphere;
-            if (Vector3.Angle(randomDir, Target.transform.position - transform.position) < 30f)
+            if (Vector3.Angle(randomDir, Target.transform.position - transform.position) < _shootAccuracy)
             {
                 _shooter.TryShoot(randomDir);
                 break;
             }
             yield return null;
         }
+
         isShooting = false;
     }
 

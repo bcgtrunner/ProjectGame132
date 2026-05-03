@@ -59,7 +59,6 @@ public class PlayerInput : MonoBehaviour
         // Scroll wheel = queue shots
         if (_actions.UI.ScrollWheel.ReadValue<Vector2>() != Vector2.zero)
         {
-            // Debug.Log(_queuedShots);
             _queuedShots++;
             _lastWheelTime = Time.time;
             _hasWheelInput = true;

@@ -9,9 +9,10 @@ public class Bullet : MonoBehaviour
 
     public Action<Collision> OnHit;
 
-    public void Launch(Vector3 dir)
+    public void Launch(Vector3 dir, float speed = 0f)
     {
         Direction = dir;
+        Speed = speed != 0 ? speed : Speed;
     }
 
     private void FixedUpdate()

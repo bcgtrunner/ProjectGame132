@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: -7784134256379187254}
   - component: {fileID: 2484666450189638920}
   m_Layer: 2
-  m_Name: Botik
+  m_Name: Sniper
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -71,7 +71,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 56aec634b554cbd4cafdd16aa03bab36, type: 2}
+  - {fileID: 2100000, guid: 6bd361c37480b2f46a47357fb76d56b5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -129,7 +129,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   _wallTouchingSideLocalNormal: {x: 0, y: -1, z: 0}
-  _flySpeed: 10
+  _flySpeed: 12
   _launchClearance: 0.02
   _collisionSkin: 0.02
   _maxHp: 6
@@ -146,12 +146,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ae7f2ab6ca9a044eb6fa9003b545c48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIInput
-  _minWaitTime: 0.1
-  _maxWaitTime: 0.5
-  _minShootDelay: 0.5
-  _maxShootDelay: 3
-  _shootAttached: 0
-  _shootAccuracy: 30
+  _minWaitTime: 3
+  _maxWaitTime: 5
+  _minShootDelay: 1
+  _maxShootDelay: 2
+  _shootAttached: 1
+  _shootAccuracy: 10
   _launchAimJitter: 0.35
   Target: {fileID: 0}
 --- !u!54 &-7784134256379187254
@@ -193,8 +193,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07be1f56a16df7446aaec42cfa7438e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PaintShooter
-  BulletSpeed: 0
-  PlayerDamage: 0.6
+  BulletSpeed: 250
+  PlayerDamage: 1
   WallDamage: 1
   Paint: {fileID: 141112844746228153, guid: b29657ad1b7c1174b8c6dc53acac6393, type: 3}
   Bullet: {fileID: 7538472990877056731, guid: e87b13b2a46ec8341a0201f388617c8e, type: 3}
