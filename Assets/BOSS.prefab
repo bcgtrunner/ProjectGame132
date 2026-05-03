@@ -217,7 +217,7 @@ MonoBehaviour:
   _coneHalfAngle: 15
   _shotsPerFrame: 5
   _scale: 1
-  _maxAngularSpeed: 120
-  _maxAngularAcceleration: 200
-  _maxJerk: 800
-  _arrivalAngle: 8
+  _maxAngularSpeed: 90
+  _maxAngularAcceleration: 400
+  _maxJerk: 3000
+  _targetChangeInterval: 2.5
