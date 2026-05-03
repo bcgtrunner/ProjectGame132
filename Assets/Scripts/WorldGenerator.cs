@@ -50,6 +50,7 @@ public class WorldGenerator : MonoBehaviour
     private float _score;
     private bool _allBotsCleared;
     private int _roomsSinceLastBoss;
+    private AIInput _currentBoss;
     [SerializeField] private float _bossHpMultiplier = 500f;
     [SerializeField] private int _deathBurstFrames = 100;
     private Material _sharedWallMaterial;
@@ -256,7 +257,7 @@ public class WorldGenerator : MonoBehaviour
 
         CleanupMissingBots();
 
-        var bossPrefab = GameManager.Instance.GetBoss(pos);
+        var bossPrefab = _currentBoss == null ? GameManager.Instance.GetBoss(pos) : null;
         if (bossPrefab != null)
         {
             AIInput boss = Instantiate(bossPrefab, GetBotSpawnPosition(pos, 0), Quaternion.identity);
@@ -264,6 +265,7 @@ public class WorldGenerator : MonoBehaviour
             var contr = boss.GetComponent<PlayerController>();
             contr.SetMaxHp(GetBotHealth(pos) * contr.MaxHp);
             boss.Destroyed += HandleBotDestroyed;
+            _currentBoss = boss;
             bots.Add(boss);
             boss.SetVirtualAttachment(GetSpawnSurfaceNormal(openingDirection));
             boss.LaunchImmediately();
@@ -518,6 +520,9 @@ public class WorldGenerator : MonoBehaviour
         }
 
         bot.Destroyed -= HandleBotDestroyed;
+
+        if (bot == _currentBoss)
+            _currentBoss = null;
 
         // Add score proportional to bot's max HP
         PlayerController botController = bot.GetComponent<PlayerController>();
