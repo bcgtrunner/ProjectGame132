@@ -28,6 +28,7 @@ public class PlayerController : MonoBehaviour
     public event Action<Vector3> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
     public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
+    public float TakeoffCooldownProgress => _takeoffCooldown.Progress();
     public bool IsAttached => _state == PlayerState.Attached;
     public bool IsAlive => _currentHp > 0f;
     public float CurrentHp => _currentHp;
