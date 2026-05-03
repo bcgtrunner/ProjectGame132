@@ -675,7 +675,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldGenerator
   _botPrefab: {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
   _botTarget: {fileID: 485187041}
-  _botsPerBox: 10
+  _botsPerBox: 3
 _deathPaintScale: 1
   bots: []
   _bossHpMultiplier: 500
