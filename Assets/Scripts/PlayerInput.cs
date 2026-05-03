@@ -89,6 +89,14 @@ public class PlayerInput : MonoBehaviour
         float x = 0f;
         float y = Screen.height - 40f;
 
+        // Takeoff cooldown bar
+        float takeoffProgress = Mathf.Clamp01(_controller.TakeoffCooldownProgress);
+        float takeoffY = y - barHeight - 2f;
+        GUI.color = Color.white;
+        GUI.DrawTexture(new Rect(x, takeoffY, barWidth, barHeight), Texture2D.whiteTexture);
+        GUI.color = Color.gray;
+        GUI.DrawTexture(new Rect(x, takeoffY, barWidth * takeoffProgress, barHeight), Texture2D.whiteTexture);
+
         // Click cooldown bar
         float clickProgress = Mathf.Clamp01(_clickCooldown.Progress());
         GUI.color = Color.white;
