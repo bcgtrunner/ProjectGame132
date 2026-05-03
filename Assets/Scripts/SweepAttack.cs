@@ -5,13 +5,15 @@ public class SweepAttack : MonoBehaviour
     [SerializeField] private float _coneHalfAngle = 15f;
     [SerializeField] private int _shotsPerFrame = 5;
     [SerializeField] private float _scale = 1f;
-    [SerializeField] private float _maxAngularSpeed = 120f;   // degrees/sec
-    [SerializeField] private float _angularAcceleration = 200f; // degrees/sec²
+    [SerializeField] private float _maxAngularSpeed = 120f;        // deg/sec
+    [SerializeField] private float _maxAngularAcceleration = 200f; // deg/sec²
+    [SerializeField] private float _maxJerk = 800f;                // deg/sec³
     [SerializeField] private float _arrivalAngle = 8f;
 
     private PaintShooter _shooter;
     private Vector3 _direction;
-    private Vector3 _angularVelocity; // tangent to sphere, magnitude = degrees/sec
+    private Vector3 _angularVelocity;
+    private Vector3 _angularAcceleration;
     private Vector3 _targetDirection;
 
     private void Awake()
@@ -26,30 +28,39 @@ public class SweepAttack : MonoBehaviour
         if (Vector3.Angle(_direction, _targetDirection) < _arrivalAngle)
             _targetDirection = Random.onUnitSphere;
 
-        // Steer angular velocity toward target (in tangent plane of _direction)
+        // Desired velocity: full speed toward target in tangent plane
         Vector3 toTarget = Vector3.ProjectOnPlane(_targetDirection, _direction);
-        if (toTarget.sqrMagnitude > Mathf.Epsilon)
-        {
-            Vector3 desiredVelocity = toTarget.normalized * _maxAngularSpeed;
-            Vector3 steering = desiredVelocity - _angularVelocity;
-            float maxDelta = _angularAcceleration * Time.deltaTime;
-            if (steering.magnitude > maxDelta)
-                steering = steering.normalized * maxDelta;
-            _angularVelocity += steering;
-        }
+        Vector3 desiredVelocity = toTarget.sqrMagnitude > Mathf.Epsilon
+            ? toTarget.normalized * _maxAngularSpeed
+            : Vector3.zero;
 
-        float speed = _angularVelocity.magnitude;
-        if (speed > _maxAngularSpeed)
+        // Desired acceleration: push velocity toward desired
+        Vector3 desiredAcceleration = (desiredVelocity - _angularVelocity);
+        if (desiredAcceleration.magnitude > _maxAngularAcceleration)
+            desiredAcceleration = desiredAcceleration.normalized * _maxAngularAcceleration;
+
+        // Jerk: push acceleration toward desired, clamped — this is what gives C2
+        Vector3 jerk = desiredAcceleration - _angularAcceleration;
+        float maxJerkStep = _maxJerk * Time.deltaTime;
+        if (jerk.magnitude > maxJerkStep)
+            jerk = jerk.normalized * maxJerkStep;
+
+        _angularAcceleration += jerk;
+        if (_angularAcceleration.magnitude > _maxAngularAcceleration)
+            _angularAcceleration = _angularAcceleration.normalized * _maxAngularAcceleration;
+
+        _angularVelocity += _angularAcceleration * Time.deltaTime;
+        if (_angularVelocity.magnitude > _maxAngularSpeed)
             _angularVelocity = _angularVelocity.normalized * _maxAngularSpeed;
 
-        // Rotate direction by angular velocity
-        float angleDelta = speed * Time.deltaTime;
+        // Rotate direction and keep both derivatives in the tangent plane
+        float angleDelta = _angularVelocity.magnitude * Time.deltaTime;
         if (angleDelta > Mathf.Epsilon)
         {
             _direction = Quaternion.AngleAxis(angleDelta, _angularVelocity.normalized) * _direction;
             _direction.Normalize();
-            // Keep angular velocity in the tangent plane after direction rotates
             _angularVelocity = Vector3.ProjectOnPlane(_angularVelocity, _direction);
+            _angularAcceleration = Vector3.ProjectOnPlane(_angularAcceleration, _direction);
         }
 
         for (int i = 0; i < _shotsPerFrame; i++)
