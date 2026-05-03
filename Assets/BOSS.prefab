@@ -134,6 +134,7 @@ MonoBehaviour:
   _collisionSkin: 0.02
   _maxHp: 500
   _healRate: 0.1
+  _launchOnWallDestroyed: 1
 --- !u!114 &109459262745567538
 MonoBehaviour:
   m_ObjectHideFlags: 0
