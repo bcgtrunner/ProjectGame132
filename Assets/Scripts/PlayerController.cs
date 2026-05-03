@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _healRate = 0.1f;
     [SerializeField] private bool _launchOnWallDestroyed = false;
     private float _currentHp;
+    private float _previousHp;
 
     private enum PlayerState { Attached, Flying }
 
@@ -79,6 +80,7 @@ public class PlayerController : MonoBehaviour
         _playerCollider = GetComponent<Collider>();
         _isPlayerControlled = TryGetComponent<PlayerInput>(out _);
         _currentHp = _maxHp;
+        _previousHp = _maxHp;
     }
 
     private void OnDestroy()
@@ -96,9 +98,9 @@ public class PlayerController : MonoBehaviour
             float barWidth = Screen.width;
 
             Color barColor = Color.white;
-            if (IsTouchingPaint)
+            if (_currentHp < _previousHp)
                 barColor = Color.red;
-            else if (_state == PlayerState.Attached && _currentHp < _maxHp)
+            else if (_currentHp > _previousHp)
                 barColor = Color.green;
 
             GUI.color = barColor;
@@ -109,6 +111,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        _previousHp = _currentHp;
+
         if (_state == PlayerState.Flying)
         {
             UpdateFlying();
