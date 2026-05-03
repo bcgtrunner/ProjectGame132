@@ -14,11 +14,9 @@ public class SweepAttack : MonoBehaviour
     [SerializeField] private float _coneHalfAngle = 15f;
     [SerializeField] private int _sweepShotsPerFrame = 5;
     [SerializeField] private float _sweepScale = 1f;
-    [SerializeField] private float _maxAngularSpeed = 90f;
-    [SerializeField] private float _maxAngularAcceleration = 400f;
-    [SerializeField] private float _maxJerk = 3000f;
+    [SerializeField] private float _rotationSpeed = 60f;
     [SerializeField] private float _targetChangeInterval = 2.5f;
-    [SerializeField] [Range(0f, 1f)] private float _playerBias = 0.4f;
+    [SerializeField] [Range(0f, 1f)] private float _playerBias = 0.7f;
 
     private enum Mode { Idle, Sweep }
     private Mode _mode = Mode.Idle;
@@ -29,8 +27,6 @@ public class SweepAttack : MonoBehaviour
     private AIInput _aiInput;
 
     private Vector3 _sweepDirection;
-    private Vector3 _angularVelocity;
-    private Vector3 _angularAcceleration;
     private Vector3 _targetDirection;
     private float _targetTimer;
 
@@ -63,7 +59,6 @@ public class SweepAttack : MonoBehaviour
 
     private void UpdateIdle()
     {
-        // Bias hemisphere toward player; fall back to surface normal; null = omnidirectional
         Vector3? hemisphere = null;
         PlayerController target = _aiInput != null ? _aiInput.Target : null;
         if (target != null)
@@ -83,36 +78,13 @@ public class SweepAttack : MonoBehaviour
             _targetTimer = Random.Range(_targetChangeInterval * 0.7f, _targetChangeInterval * 1.3f);
         }
 
-        Vector3 toTarget = Vector3.ProjectOnPlane(_targetDirection, _sweepDirection);
-        Vector3 desiredVelocity = toTarget.sqrMagnitude > Mathf.Epsilon
-            ? toTarget.normalized * _maxAngularSpeed
-            : Vector3.zero;
-
-        Vector3 desiredAcceleration = desiredVelocity - _angularVelocity;
-        if (desiredAcceleration.magnitude > _maxAngularAcceleration)
-            desiredAcceleration = desiredAcceleration.normalized * _maxAngularAcceleration;
-
-        Vector3 jerk = desiredAcceleration - _angularAcceleration;
-        float maxJerkStep = _maxJerk * Time.deltaTime;
-        if (jerk.magnitude > maxJerkStep)
-            jerk = jerk.normalized * maxJerkStep;
-
-        _angularAcceleration += jerk;
-        if (_angularAcceleration.magnitude > _maxAngularAcceleration)
-            _angularAcceleration = _angularAcceleration.normalized * _maxAngularAcceleration;
-
-        _angularVelocity += _angularAcceleration * Time.deltaTime;
-        if (_angularVelocity.magnitude > _maxAngularSpeed)
-            _angularVelocity = _angularVelocity.normalized * _maxAngularSpeed;
-
-        float angleDelta = _angularVelocity.magnitude * Time.deltaTime;
-        if (angleDelta > Mathf.Epsilon)
-        {
-            _sweepDirection = Quaternion.AngleAxis(angleDelta, _angularVelocity.normalized) * _sweepDirection;
-            _sweepDirection.Normalize();
-            _angularVelocity = Vector3.ProjectOnPlane(_angularVelocity, _sweepDirection);
-            _angularAcceleration = Vector3.ProjectOnPlane(_angularAcceleration, _sweepDirection);
-        }
+        // Smoothly rotate sweep direction toward target at a fixed rotation speed
+        _sweepDirection = Vector3.RotateTowards(
+            _sweepDirection,
+            _targetDirection,
+            _rotationSpeed * Mathf.Deg2Rad * Time.deltaTime,
+            1f
+        );
 
         for (int i = 0; i < _sweepShotsPerFrame; i++)
             _shooter.TryShoot(RandomInCone(_sweepDirection, _coneHalfAngle), _sweepScale);
