@@ -50,7 +50,6 @@ public class WorldGenerator : MonoBehaviour
     private float _score;
     private bool _allBotsCleared;
     private AIInput _currentBoss;
-    private float _previousBossHp;
     [SerializeField] private int _deathBurstFrames = 100;
     private Material _sharedWallMaterial;
     private Mesh _cachedCubeMesh;
@@ -511,18 +510,16 @@ public class WorldGenerator : MonoBehaviour
             {
                 PaintShooter playerShooter = _botTarget.GetComponent<PaintShooter>();
                 if (playerShooter != null)
-                {
-                    Vector3? surfaceNormal = _botTarget.IsAttached ? _botTarget.CurrentSurfaceNormal : null;
-                    StartCoroutine(DeathBurstCoroutine(playerShooter, 10, _deathPaintScale, surfaceNormal));
-                }
+                    StartCoroutine(DeathBurstCoroutine(playerShooter, _botTarget, 10, _deathPaintScale));
             }
         }
     }
 
-    private IEnumerator DeathBurstCoroutine(PaintShooter shooter, int shotsPerFrame, float scale, Vector3? surfaceNormal)
+    private IEnumerator DeathBurstCoroutine(PaintShooter shooter, PlayerController player, int shotsPerFrame, float scale)
     {
         for (int frame = 0; frame < _deathBurstFrames; frame++)
         {
+            Vector3? surfaceNormal = player.IsAttached ? player.CurrentSurfaceNormal : (Vector3?)null;
             shooter.ShootDeathBurst(shotsPerFrame, scale, surfaceNormal);
             yield return null;
         }
@@ -553,22 +550,11 @@ public class WorldGenerator : MonoBehaviour
         if (_currentBoss != null)
         {
             var bossController = _currentBoss.GetComponent<PlayerController>();
-            float currentBossHp = bossController.CurrentHp;
-            float bossHpRatio = currentBossHp / bossController.MaxHp;
-            float barHeight = 20f;
+            float bossHpRatio = bossController.CurrentHp / bossController.MaxHp;
 
-            Color barColor = Color.white;
-            if (currentBossHp < _previousBossHp)
-                barColor = Color.red;
-            else if (currentBossHp > _previousBossHp)
-                barColor = Color.green;
-
-            GUI.color = barColor;
-            GUI.DrawTexture(new Rect(0, 0, Screen.width * bossHpRatio, barHeight), Texture2D.whiteTexture);
+            GUI.color = PlayerController.GetHpFlashColor(bossController.DamageFlash, bossController.HealFlash);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width * bossHpRatio, 20f), Texture2D.whiteTexture);
             GUI.color = Color.white;
-
-            if (Event.current.type == EventType.Repaint)
-                _previousBossHp = currentBossHp;
         }
     }
 
