@@ -29,6 +29,8 @@ public class PlayerController : MonoBehaviour
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
     public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
     public float TakeoffCooldownProgress => _takeoffCooldown.Progress();
+    public Cooldown DamageFlash => _damageFlash;
+    public Cooldown HealFlash => _healFlash;
     public bool IsAttached => _state == PlayerState.Attached;
     public bool IsAlive => _currentHp > 0f;
     public float CurrentHp => _currentHp;
@@ -75,13 +77,18 @@ public class PlayerController : MonoBehaviour
     }
 
     [SerializeField] private float _takeoffCooldownDuration = 0.35f;
+    [SerializeField] private float _hpFlashDuration = 0.4f;
     private Cooldown _takeoffCooldown;
+    private Cooldown _damageFlash;
+    private Cooldown _healFlash;
 
     private void Awake()
     {
         _playerCollider = GetComponent<Collider>();
         _isPlayerControlled = TryGetComponent<PlayerInput>(out _);
         _takeoffCooldown = new Cooldown(_takeoffCooldownDuration);
+        _damageFlash = new Cooldown(_hpFlashDuration);
+        _healFlash = new Cooldown(_hpFlashDuration);
         _currentHp = _maxHp;
         _previousHp = _maxHp;
     }
@@ -98,22 +105,17 @@ public class PlayerController : MonoBehaviour
             float hpRatio = _currentHp / _maxHp;
             float barHeight = 20f;
             float barY = Screen.height - barHeight;
-            float barWidth = Screen.width;
 
-            Color barColor = Color.white;
-            if (_currentHp < _previousHp)
-                barColor = Color.red;
-            else if (_currentHp > _previousHp)
-                barColor = Color.green;
-
-            GUI.color = barColor;
-            GUI.DrawTexture(new Rect(0, barY, barWidth * hpRatio, barHeight), Texture2D.whiteTexture);
+            GUI.color = GetHpFlashColor(_damageFlash, _healFlash);
+            GUI.DrawTexture(new Rect(0, barY, Screen.width * hpRatio, barHeight), Texture2D.whiteTexture);
             GUI.color = Color.white;
         }
     }
 
     private void Update()
     {
+        if (_currentHp < _previousHp) _damageFlash.Reset();
+        else if (_currentHp > _previousHp) _healFlash.Reset();
         _previousHp = _currentHp;
 
         if (_state == PlayerState.Flying)
@@ -406,5 +408,14 @@ public class PlayerController : MonoBehaviour
             Mathf.Max(halfExtents.x - amount, 0.001f),
             Mathf.Max(halfExtents.y - amount, 0.001f),
             Mathf.Max(halfExtents.z - amount, 0.001f));
+    }
+
+    public static Color GetHpFlashColor(Cooldown damageFlash, Cooldown healFlash)
+    {
+        if (!damageFlash.Over())
+            return Color.Lerp(Color.red, Color.white, damageFlash.Progress());
+        if (!healFlash.Over())
+            return Color.Lerp(Color.green, Color.white, healFlash.Progress());
+        return Color.white;
     }
 }
