@@ -50,6 +50,7 @@ public class WorldGenerator : MonoBehaviour
     private float _score;
     private bool _allBotsCleared;
     private AIInput _currentBoss;
+    private float _previousBossHp;
     [SerializeField] private int _deathBurstFrames = 100;
     private Material _sharedWallMaterial;
     private Mesh _cachedCubeMesh;
@@ -548,6 +549,27 @@ public class WorldGenerator : MonoBehaviour
         };
 
         GUI.Label(new Rect(x, y, textWidth, textHeight), scoreText, style);
+
+        if (_currentBoss != null)
+        {
+            var bossController = _currentBoss.GetComponent<PlayerController>();
+            float currentBossHp = bossController.CurrentHp;
+            float bossHpRatio = currentBossHp / bossController.MaxHp;
+            float barHeight = 20f;
+
+            Color barColor = Color.white;
+            if (currentBossHp < _previousBossHp)
+                barColor = Color.red;
+            else if (currentBossHp > _previousBossHp)
+                barColor = Color.green;
+
+            GUI.color = barColor;
+            GUI.DrawTexture(new Rect(0, 0, Screen.width * bossHpRatio, barHeight), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+
+            if (Event.current.type == EventType.Repaint)
+                _previousBossHp = currentBossHp;
+        }
     }
 
     private void CleanupMissingBots()
