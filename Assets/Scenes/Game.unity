@@ -273,7 +273,6 @@ MonoBehaviour:
   _rotationSensitivity: 0.15
   _minPitch: -80
   _maxPitch: 80
-  _attachTransitionDuration: 1
 --- !u!1 &485187036
 GameObject:
   m_ObjectHideFlags: 0
@@ -406,8 +405,10 @@ MonoBehaviour:
   _flySpeed: 18
   _launchClearance: 0.02
   _collisionSkin: 0.02
-  _maxHp: 60
+  _maxHp: 10
   _healRate: 0.1
+  _launchOnWallDestroyed: 0
+  _takeoffCooldownDuration: 0.35
 --- !u!114 &485187042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -676,9 +677,9 @@ MonoBehaviour:
   _botPrefab: {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
   _botTarget: {fileID: 485187041}
   _botsPerBox: 3
-_deathPaintScale: 1
-  bots: []
+  _deathPaintScale: 1
   _bossHpMultiplier: 500
+  _deathBurstFrames: 100
 --- !u!4 &957641014
 Transform:
   m_ObjectHideFlags: 0
