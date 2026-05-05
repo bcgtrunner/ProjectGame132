@@ -220,9 +220,9 @@ MonoBehaviour:
   _shrapnelScale: 0.6
   _coneHalfAngle: 15
   _sweepShotsPerFrame: 5
-  _sweepScale: 1
+  _sweepScale: 1.5
   _maxAngularSpeed: 90
   _maxAngularAcceleration: 400
   _maxJerk: 3000
   _targetChangeInterval: 2.5
-  _playerBias: 0.4
+  _playerBias: 0.8
