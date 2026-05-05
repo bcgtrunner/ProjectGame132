@@ -273,7 +273,6 @@ MonoBehaviour:
   _rotationSensitivity: 0.15
   _minPitch: -80
   _maxPitch: 80
-  _attachTransitionDuration: 1
 --- !u!1 &485187036
 GameObject:
   m_ObjectHideFlags: 0
@@ -403,11 +402,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   _wallTouchingSideLocalNormal: {x: 0, y: -1, z: 0}
-  _flySpeed: 18
+  _flySpeed: 10
   _launchClearance: 0.02
   _collisionSkin: 0.02
-  _maxHp: 60
+  _maxHp: 6
   _healRate: 0.1
+  _launchOnWallDestroyed: 0
+  _takeoffCooldownDuration: 0.35
 --- !u!114 &485187042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -623,10 +624,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ebde5fe092828408b037fcf93484ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  RoomsSinceLastBoss: 0
   Enemies:
-  - {fileID: 109459262745567538, guid: 0c44832408154004f9601ac82b145df2, type: 3}
   - {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
+  - {fileID: 109459262745567538, guid: 0c44832408154004f9601ac82b145df2, type: 3}
   - {fileID: 109459262745567538, guid: 9ca813903dd56574aa0261bdc1dffe5c, type: 3}
   Boss: {fileID: 109459262745567538, guid: 97d450991274a3441a99280f63e961c1, type: 3}
 --- !u!4 &774046961
@@ -675,10 +675,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldGenerator
   _botPrefab: {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
   _botTarget: {fileID: 485187041}
-  _botsPerBox: 3
-_deathPaintScale: 1
-  bots: []
-  _bossHpMultiplier: 500
+  _botsPerBox: 10
+  _deathPaintScale: 1
+  _deathBurstFrames: 100
 --- !u!4 &957641014
 Transform:
   m_ObjectHideFlags: 0
