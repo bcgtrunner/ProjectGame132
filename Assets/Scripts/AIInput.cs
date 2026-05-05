@@ -4,6 +4,7 @@ using System.Collections;
 [RequireComponent(typeof(PlayerController))]
 public class AIInput : MonoBehaviour
 {
+    [Header("Timings & Shooting")]
     [SerializeField] private float _minWaitTime = 0.5f;
     [SerializeField] private float _maxWaitTime = 2.0f;
     [SerializeField] private float _minShootDelay = 2.0f;
@@ -14,6 +15,14 @@ public class AIInput : MonoBehaviour
     [SerializeField] private bool _emitShrapnel = false;
     [SerializeField] private int _shrapnelShotsPerFrame = 10;
     [SerializeField] private float _shrapnelScale = 0.3f;
+
+    [Header("Movement & AI Behavior")]
+    [Tooltip("Насколько сильно бот хочет приблизиться к цели. Чем выше значение, тем приоритетнее для бота стены, находящиеся ближе к игроку.")]
+    [SerializeField] private float _followStrength = 1.0f;
+    [Tooltip("Максимальная дистанция, на которую бот может переместиться за один прыжок.")]
+    [SerializeField] private float _maxTravelDistance = 10f;
+    [Tooltip("Минимальное количество HP стены, на которую бот согласится прыгнуть.")]
+    [SerializeField] private float _minWallHpThreshold = 2.0f;
 
     private PlayerController _controller;
     private PaintShooter _shooter;
@@ -76,7 +85,7 @@ public class AIInput : MonoBehaviour
 
         if (_controller.IsAttached)
         {
-            _controller.TryLaunch(GetImmediateLaunchDirection());
+            _controller.TryLaunch(GetSmartLaunchDirection());
         }
         isLaunching = false;
     }
@@ -125,5 +134,59 @@ public class AIInput : MonoBehaviour
         }
 
         return Random.onUnitSphere;
+    }
+
+    private Vector3 GetSmartLaunchDirection()
+    {
+        int samples = 20;
+        Vector3 bestDir = Vector3.zero;
+        float bestScore = float.MinValue;
+
+        for (int i = 0; i < samples; i++)
+        {
+            Vector3 dir = Random.onUnitSphere;
+
+            // Используем настраиваемую переменную _maxTravelDistance вместо 10f
+            if (Physics.Raycast(transform.position, dir, out RaycastHit hit, _maxTravelDistance))
+            {
+                // Проверка: не перемещаться на стену с низким HP
+                Wall wall = hit.collider.GetComponent<Wall>();
+                if (wall != null)
+                {
+                    // ВАЖНО: Замените .CurrentHp на актуальное свойство здоровья в вашем скрипте Wall
+                    if (wall.Health < _minWallHpThreshold)
+                    {
+                        continue; // Игнорируем эту стену, если у неё мало здоровья
+                    }
+                }
+
+                float score = 0;
+                if (Target != null)
+                {
+                    float dist = Vector3.Distance(hit.point, Target.transform.position);
+                    // Умножаем дистанцию на силу следования
+                    score -= dist * _followStrength;
+                }
+
+                score += hit.distance;
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestDir = dir;
+                }
+            }
+        }
+
+        return bestDir != Vector3.zero ? bestDir : Random.onUnitSphere;
+    }
+
+    Vector3 PredictTargetPosition()
+    {
+        Rigidbody targetRb = Target.GetComponent<Rigidbody>();
+        if (targetRb == null) return Target.transform.position;
+
+        float predictionTime = 0.5f;
+        return Target.transform.position + targetRb.linearVelocity * predictionTime;
     }
 }
