@@ -50,6 +50,7 @@ public class WorldGenerator : MonoBehaviour
     private float _score;
     private bool _allBotsCleared;
     private AIInput _currentBoss;
+    private int _bossesDefeated;
     [SerializeField] private int _deathBurstFrames = 100;
     private Material _sharedWallMaterial;
     private Mesh _cachedCubeMesh;
@@ -489,7 +490,10 @@ public class WorldGenerator : MonoBehaviour
         bot.Destroyed -= HandleBotDestroyed;
 
         if (bot == _currentBoss)
+        {
             _currentBoss = null;
+            _bossesDefeated++;
+        }
 
         // Add score proportional to bot's max HP
         PlayerController botController = bot.GetComponent<PlayerController>();
@@ -555,6 +559,17 @@ public class WorldGenerator : MonoBehaviour
             GUI.color = PlayerController.GetHpFlashColor(bossController.DamageFlash, bossController.HealFlash);
             GUI.DrawTexture(new Rect(0, 0, Screen.width * bossHpRatio, 20f), Texture2D.whiteTexture);
             GUI.color = Color.white;
+        }
+
+        if (_bossesDefeated > 0)
+        {
+            GUIStyle bossCountStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 18,
+                alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = Color.white }
+            };
+            GUI.Label(new Rect(6f, 22f, 160f, 24f), $"Bosses: {_bossesDefeated}", bossCountStyle);
         }
     }
 
