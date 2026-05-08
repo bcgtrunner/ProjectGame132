@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -18,6 +19,18 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    public void Restart()
+    {
+        SceneManager.LoadScene(1);
+    }
+
+    public void GoToMenu()
+    {
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = true;
+        SceneManager.LoadScene(0);
+    }
+        
     public AIInput GetRandomEnemy(Vector3Int pos)
     {
         if (Enemies == null || Enemies.Count == 0)

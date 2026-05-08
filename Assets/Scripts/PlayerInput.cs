@@ -19,7 +19,6 @@ public class PlayerInput : MonoBehaviour
     private bool _hasWheelInput;
     private Camera _camera;
 
-    // create 
     private void Awake()
     {
         _controller = GetComponent<PlayerController>();
@@ -43,7 +42,10 @@ public class PlayerInput : MonoBehaviour
     private void Update()
     {
         Vector3 direction = _camera != null ? _camera.transform.forward : transform.forward;
-
+        if (_actions.UI.Escape.WasPerformedThisFrame())
+        {
+            GameManager.Instance.GoToMenu();
+        }
         // Left click = shoot (bigger projectile, rate-limited)
         if (_actions.UI.Click.WasPressedThisFrame() && _clickCooldown.Over())
         {
