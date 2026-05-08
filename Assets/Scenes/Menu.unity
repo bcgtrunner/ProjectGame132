@@ -286,7 +286,7 @@ GameObject:
   - component: {fileID: 817220097}
   - component: {fileID: 817220096}
   m_Layer: 5
-  m_Name: Credits
+  m_Name: Quit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -955,7 +955,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20882e261d8a0c2439af4377580735b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  playButton: {fileID: 0}
+  playButton: {fileID: 856680359}
+  quitButton: {fileID: 817220096}
 --- !u!4 &1622855513
 Transform:
   m_ObjectHideFlags: 0
@@ -1090,7 +1091,7 @@ GameObject:
   - component: {fileID: 1990224945}
   - component: {fileID: 1990224944}
   m_Layer: 5
-  m_Name: Credits
+  m_Name: Version
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1272,7 +1273,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Credits
+  m_text: Quit
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
