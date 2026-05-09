@@ -11,12 +11,17 @@ public class PlayerInput : MonoBehaviour
     [SerializeField] private float _shotCooldownDuration = 0.05f;
     [SerializeField] private float _clickCooldownDuration = 0.3f;
     [SerializeField] private float _idleTimeLimit = 0.4f;
+    [SerializeField] private float _maxChargeDuration = 1.5f;
+    [SerializeField] private float _minClickScale = 2f;
+    [SerializeField] private float _maxClickScale = 4f;
 
     private Cooldown _shotCooldown;
     private Cooldown _clickCooldown;
     private int _queuedShots;
     private float _lastWheelTime;
     private bool _hasWheelInput;
+    private bool _isCharging;
+    private float _chargeStartTime;
     private Camera _camera;
 
     private void Awake()
@@ -46,11 +51,20 @@ public class PlayerInput : MonoBehaviour
         {
             GameManager.Instance.GoToMenu();
         }
-        // Left click = shoot (bigger projectile, rate-limited)
+        // Left click = charge shot (hold to ramp scale 2→4, release to fire)
         if (_actions.UI.Click.WasPressedThisFrame() && _clickCooldown.Over())
         {
-            _shooter.TryShoot(direction, 2f);
+            _isCharging = true;
+            _chargeStartTime = Time.time;
+        }
+
+        if (_isCharging && _actions.UI.Click.WasReleasedThisFrame())
+        {
+            float chargeProgress = Mathf.Clamp01((Time.time - _chargeStartTime) / _maxChargeDuration);
+            float scale = Mathf.Lerp(_minClickScale, _maxClickScale, chargeProgress);
+            _shooter.TryShoot(direction, scale);
             _clickCooldown.Reset();
+            _isCharging = false;
         }
 
         // Right click = launch
@@ -100,12 +114,23 @@ public class PlayerInput : MonoBehaviour
         GUI.color = Color.gray;
         GUI.DrawTexture(new Rect(x, takeoffY, barWidth * takeoffProgress, barHeight), Texture2D.whiteTexture);
 
-        // Click cooldown bar
-        float clickProgress = Mathf.Clamp01(_clickCooldown.Progress());
-        GUI.color = Color.white;
-        GUI.DrawTexture(new Rect(x, y, barWidth, barHeight), Texture2D.whiteTexture);
-        GUI.color = Color.gray;
-        GUI.DrawTexture(new Rect(x, y, barWidth * clickProgress, barHeight), Texture2D.whiteTexture);
+        // Click cooldown bar / charge bar
+        if (_isCharging)
+        {
+            float chargeProgress = Mathf.Clamp01((Time.time - _chargeStartTime) / _maxChargeDuration);
+            GUI.color = Color.white;
+            GUI.DrawTexture(new Rect(x, y, barWidth, barHeight), Texture2D.whiteTexture);
+            GUI.color = Color.yellow;
+            GUI.DrawTexture(new Rect(x, y, barWidth * chargeProgress, barHeight), Texture2D.whiteTexture);
+        }
+        else
+        {
+            float clickProgress = Mathf.Clamp01(_clickCooldown.Progress());
+            GUI.color = Color.white;
+            GUI.DrawTexture(new Rect(x, y, barWidth, barHeight), Texture2D.whiteTexture);
+            GUI.color = Color.gray;
+            GUI.DrawTexture(new Rect(x, y, barWidth * clickProgress, barHeight), Texture2D.whiteTexture);
+        }
 
         // Shot (spam) cooldown bar
         float shotProgress = Mathf.Clamp01(_shotCooldown.Progress());
