@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 109459262745567538}
   - component: {fileID: -7784134256379187254}
   - component: {fileID: 2484666450189638920}
+  - component: {fileID: 3399716694662832702}
   m_Layer: 2
   m_Name: BOSS
   m_TagString: Untagged
@@ -135,6 +136,7 @@ MonoBehaviour:
   _maxHp: 350
   _healRate: 0.1
   _launchOnWallDestroyed: 1
+  _takeoffCooldownDuration: 0.35
 --- !u!114 &109459262745567538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,8 +158,10 @@ MonoBehaviour:
   _launchAimJitter: 0.35
   _emitShrapnel: 0
   _shrapnelShotsPerFrame: 1
-  _shrapnelScale: 1.0
-  Target: {fileID: 0}
+  _shrapnelScale: 1
+  _followStrength: 0
+  _maxTravelDistance: 50
+  _minWallHpThreshold: 10
 --- !u!54 &-7784134256379187254
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -220,9 +224,7 @@ MonoBehaviour:
   _shrapnelScale: 0.6
   _coneHalfAngle: 15
   _sweepShotsPerFrame: 5
-  _sweepScale: 1.5
-  _maxAngularSpeed: 90
-  _maxAngularAcceleration: 400
-  _maxJerk: 3000
+  _sweepScale: 1
+  _rotationSpeed: 60
   _targetChangeInterval: 2.5
   _playerBias: 0.8

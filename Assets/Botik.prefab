@@ -134,6 +134,8 @@ MonoBehaviour:
   _collisionSkin: 0.02
   _maxHp: 6
   _healRate: 0.1
+  _launchOnWallDestroyed: 0
+  _takeoffCooldownDuration: 0.35
 --- !u!114 &109459262745567538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -153,7 +155,12 @@ MonoBehaviour:
   _shootAttached: 0
   _shootAccuracy: 30
   _launchAimJitter: 0.35
-  Target: {fileID: 0}
+  _emitShrapnel: 0
+  _shrapnelShotsPerFrame: 10
+  _shrapnelScale: 0.3
+  _followStrength: 1
+  _maxTravelDistance: 30
+  _minWallHpThreshold: 2
 --- !u!54 &-7784134256379187254
 Rigidbody:
   m_ObjectHideFlags: 0
