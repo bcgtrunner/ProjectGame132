@@ -58,7 +58,7 @@ public class PlayerController : MonoBehaviour
         {
             if (_isPlayerControlled)
             {
-                SceneManager.LoadScene(0);
+                GameManager.Instance.Restart();
             }
             else
             {
