@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
 
     private int _roomsSinceLastBoss;
+    private float[] _weightBuffer = System.Array.Empty<float>();
 
     public List<AIInput> Enemies;
     public AIInput Boss;
@@ -41,7 +42,9 @@ public class GameManager : MonoBehaviour
 
         int sum = pos.x + pos.y + pos.z;
 
-        float[] weights = new float[Enemies.Count];
+        if (_weightBuffer.Length < Enemies.Count)
+            _weightBuffer = new float[Enemies.Count];
+        float[] weights = _weightBuffer;
 
         for (int i = 0; i < weights.Length; i++)
             weights[i] = 1f;

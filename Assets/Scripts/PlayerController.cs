@@ -24,6 +24,8 @@ public class PlayerController : MonoBehaviour
     private Collider _attachedWallCollider;
     private Wall _attachedWall;
     private int _paintTouchCount;
+    private readonly RaycastHit[] _castHitBuffer = new RaycastHit[16];
+    private readonly Collider[] _overlapBuffer = new Collider[16];
 
     public event Action<Vector3> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
@@ -302,23 +304,24 @@ public class PlayerController : MonoBehaviour
         {
             Vector3 center = GetBoxColliderWorldCenter(playerBox, transform.position, transform.rotation);
             Vector3 halfExtents = ShrinkHalfExtents(GetBoxColliderHalfExtents(playerBox), _collisionSkin);
-            RaycastHit[] hits = Physics.BoxCastAll(center, halfExtents, direction, transform.rotation, castDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
-            return TryGetClosestValidWallHit(hits, out closestHit);
+            int hitCount = Physics.BoxCastNonAlloc(center, halfExtents, direction, _castHitBuffer, transform.rotation, castDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            return TryGetClosestValidWallHit(_castHitBuffer, hitCount, out closestHit);
         }
 
         float sphereRadius = Mathf.Max(GetProjectedHalfExtent(transform.rotation, direction) - _collisionSkin, 0.001f);
-        RaycastHit[] sphereHits = Physics.SphereCastAll(transform.position, sphereRadius, direction, castDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
-        return TryGetClosestValidWallHit(sphereHits, out closestHit);
+        int sphereHitCount = Physics.SphereCastNonAlloc(transform.position, sphereRadius, direction, _castHitBuffer, castDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+        return TryGetClosestValidWallHit(_castHitBuffer, sphereHitCount, out closestHit);
     }
 
-    private bool TryGetClosestValidWallHit(RaycastHit[] hits, out RaycastHit closestHit)
+    private bool TryGetClosestValidWallHit(RaycastHit[] hits, int count, out RaycastHit closestHit)
     {
         closestHit = default;
         bool foundHit = false;
         float closestDistance = float.MaxValue;
 
-        foreach (RaycastHit hit in hits)
+        for (int i = 0; i < count; i++)
         {
+            RaycastHit hit = hits[i];
             if (hit.collider == _playerCollider ||
                 hit.collider == _attachedWallCollider ||
                 !hit.collider.TryGetComponent<Wall>(out _))
@@ -350,11 +353,12 @@ public class PlayerController : MonoBehaviour
         {
             Vector3 center = GetBoxColliderWorldCenter(playerBox, transform.position, transform.rotation);
             Vector3 halfExtents = ShrinkHalfExtents(GetBoxColliderHalfExtents(playerBox), _collisionSkin * 0.5f);
-            Collider[] overlaps = Physics.OverlapBox(center, halfExtents, transform.rotation, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            int overlapCount = Physics.OverlapBoxNonAlloc(center, halfExtents, _overlapBuffer, transform.rotation, Physics.AllLayers, QueryTriggerInteraction.Ignore);
             Vector3 correction = Vector3.zero;
 
-            foreach (Collider overlap in overlaps)
+            for (int oi = 0; oi < overlapCount; oi++)
             {
+                Collider overlap = _overlapBuffer[oi];
                 if (overlap == _playerCollider ||
                     overlap == _attachedWallCollider ||
                     !overlap.TryGetComponent<Wall>(out _))

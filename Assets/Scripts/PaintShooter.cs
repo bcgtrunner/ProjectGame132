@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 
 public class PaintShooter : MonoBehaviour
@@ -73,8 +72,11 @@ public class PaintShooter : MonoBehaviour
                     paint.transform.localScale *= scale;
                     paint.AttachTo(hitWall);
 
+                    var paintRenderer = paint.GetComponent<MeshRenderer>();
                     hitWall.SetDamageColor(
-                        paint.GetComponent<MeshRenderer>()?.sharedMaterial?.GetColor("_BaseColor") ?? Color.red
+                        paintRenderer != null && paintRenderer.sharedMaterial != null
+                            ? paintRenderer.sharedMaterial.GetColor("_BaseColor")
+                            : Color.red
                     );
                     float areaDamage = WallDamage * scale * scale;
                     hitWall.Damage(areaDamage);
