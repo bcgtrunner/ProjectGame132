@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     public List<AIInput> EnemyPrefabs;
     public AIInput BossPrefab;
 
+
     private float _score;
     private int _bossesDefeated;
 
@@ -32,11 +33,13 @@ public class GameManager : MonoBehaviour
 
     public void Restart()
     {
+        _score = 0;
         SceneManager.LoadScene(1);
     }
 
     public void GoToMenu()
     {
+        _score = 0;
         Cursor.lockState = CursorLockMode.Confined;
         Cursor.visible = true;
         SceneManager.LoadScene(0);
@@ -59,6 +62,7 @@ public class GameManager : MonoBehaviour
 
     private void OnGUI()
     {
+        if (BotSpawner.Instance == null) return;
         string scoreText = _score.ToString("F1");
         float textWidth = 200f;
         float textHeight = 30f;
