@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class BotSpawner : MonoBehaviour
 {
@@ -13,15 +14,20 @@ public class BotSpawner : MonoBehaviour
 
     private readonly List<AIInput> _bots = new();
     private readonly HashSet<Vector3Int> _filledBoxes = new();
-    private float _score;
+    
     private bool _allBotsCleared;
-    private AIInput _currentBoss;
-    private int _bossesDefeated;
+    private PlayerController _currentBoss;
+    public PlayerController CurrentBoss => _currentBoss;
+
+    public static BotSpawner Instance;
+
 
     private void Awake()
     {
-        if (_botTarget == null)
-            _botTarget = FindAnyObjectByType<PlayerInput>()?.GetComponent<PlayerController>();
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(Instance);
 
         _worldGenerator.BoxOpened += FillBox;
         _worldGenerator.WallAboutToBeDestroyed += KillCharactersAttachedToWall;
@@ -64,7 +70,7 @@ public class BotSpawner : MonoBehaviour
             var contr = boss.GetComponent<PlayerController>();
             contr.SetMaxHp(GetBotHealth(pos) * contr.MaxHp);
             boss.Destroyed += HandleBotDestroyed;
-            _currentBoss = boss;
+            _currentBoss = contr;
             _bots.Add(boss);
             boss.SetVirtualAttachment(WorldGenerator.GetSpawnSurfaceNormal(openingDirection));
             boss.LaunchImmediately();
@@ -112,22 +118,20 @@ public class BotSpawner : MonoBehaviour
 
         bot.Destroyed -= HandleBotDestroyed;
 
-        if (bot == _currentBoss)
+        PlayerController botController = bot.GetComponent<PlayerController>();
+        if (botController == _currentBoss)
         {
             _currentBoss = null;
-            _bossesDefeated++;
         }
 
-        PlayerController botController = bot.GetComponent<PlayerController>();
         if (botController != null)
-            _score += botController.MaxHp;
+            GameManager.Instance.AddScore(botController.MaxHp);
 
         _bots.Remove(bot);
-
         if (_bots.Count == 0 && !_allBotsCleared)
         {
             _allBotsCleared = true;
-            _score *= 1.5f;
+            GameManager.Instance.MultiplyScore(1.5f);
 
             if (_botTarget != null)
             {
@@ -183,48 +187,6 @@ public class BotSpawner : MonoBehaviour
         {
             if (_bots[i] == null)
                 _bots.RemoveAt(i);
-        }
-    }
-
-    private void OnGUI()
-    {
-        if (_botTarget == null || !_botTarget.TryGetComponent<PlayerInput>(out _))
-            return;
-
-        string scoreText = _score.ToString("F1");
-        float textWidth = 200f;
-        float textHeight = 30f;
-        float x = (Screen.width - textWidth) * 0.5f;
-        float y = 10f;
-
-        GUIStyle style = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 24,
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = Color.white }
-        };
-
-        GUI.Label(new Rect(x, y, textWidth, textHeight), scoreText, style);
-
-        if (_currentBoss != null)
-        {
-            var bossController = _currentBoss.GetComponent<PlayerController>();
-            float bossHpRatio = bossController.CurrentHp / bossController.MaxHp;
-
-            GUI.color = PlayerController.GetHpFlashColor(bossController.DamageFlash, bossController.HealFlash);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width * bossHpRatio, 20f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-        }
-
-        if (_bossesDefeated > 0)
-        {
-            GUIStyle bossCountStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 18,
-                alignment = TextAnchor.MiddleLeft,
-                normal = { textColor = Color.white }
-            };
-            GUI.Label(new Rect(6f, 22f, 160f, 24f), $"Bosses: {_bossesDefeated}", bossCountStyle);
         }
     }
 }

@@ -6,11 +6,18 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    
     private int _roomsSinceLastBoss;
     private float[] _weightBuffer = System.Array.Empty<float>();
 
-    public List<AIInput> Enemies;
-    public AIInput Boss;
+    public List<AIInput> EnemyPrefabs;
+    public AIInput BossPrefab;
+
+    private float _score;
+    private int _bossesDefeated;
+
+    public PlayerController Player { get; set; }
+
 
     private void Awake()
     {
@@ -34,10 +41,64 @@ public class GameManager : MonoBehaviour
         Cursor.visible = true;
         SceneManager.LoadScene(0);
     }
-        
+
+    public void AddScore(float value)
+    {
+        _score += value;
+    }
+
+    public void MultiplyScore(float value)
+    {
+        _score *= value;
+    }
+
+    public void BossDefeated()
+    {
+        _bossesDefeated++;
+    }
+
+    private void OnGUI()
+    {
+        string scoreText = _score.ToString("F1");
+        float textWidth = 200f;
+        float textHeight = 30f;
+        float x = (Screen.width - textWidth) * 0.5f;
+        float y = 10f;
+
+        GUIStyle style = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 24,
+            alignment = TextAnchor.MiddleCenter,
+            normal = { textColor = Color.white }
+        };
+
+        GUI.Label(new Rect(x, y, textWidth, textHeight), scoreText, style);
+
+        if (BotSpawner.Instance != null && BotSpawner.Instance.CurrentBoss != null)
+        {
+            var bossController = BotSpawner.Instance.CurrentBoss;
+            float bossHpRatio = bossController.CurrentHp / bossController.MaxHp;
+
+            GUI.color = PlayerController.GetHpFlashColor(bossController.DamageFlash, bossController.HealFlash);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width * bossHpRatio, 20f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+        }
+
+        if (_bossesDefeated > 0)
+        {
+            GUIStyle bossCountStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 18,
+                alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = Color.white }
+            };
+            GUI.Label(new Rect(6f, 22f, 160f, 24f), $"Bosses: {_bossesDefeated}", bossCountStyle);
+        }
+    }
+
     public AIInput GetRandomEnemy(Vector3Int pos)
     {
-        if (Enemies == null || Enemies.Count == 0)
+        if (EnemyPrefabs == null || EnemyPrefabs.Count == 0)
         {
             Debug.LogError("GameManager has no enemies assigned.", this);
             return null;
@@ -45,8 +106,8 @@ public class GameManager : MonoBehaviour
 
         int sum = pos.x + pos.y + pos.z;
 
-        if (_weightBuffer.Length < Enemies.Count)
-            _weightBuffer = new float[Enemies.Count];
+        if (_weightBuffer.Length < EnemyPrefabs.Count)
+            _weightBuffer = new float[EnemyPrefabs.Count];
         float[] weights = _weightBuffer;
 
         for (int i = 0; i < weights.Length; i++)
@@ -73,10 +134,10 @@ public class GameManager : MonoBehaviour
         {
             cumulative += weights[i];
             if (random <= cumulative)
-                return Enemies[i];
+                return EnemyPrefabs[i];
         }
 
-        return Enemies[0];
+        return EnemyPrefabs[0];
     }
 
     public AIInput GetBoss(Vector3Int pos)
@@ -97,6 +158,6 @@ public class GameManager : MonoBehaviour
         Debug.Log($"BOSS spawned at room {pos}");
         _roomsSinceLastBoss = 0;
 
-        return Boss;
+        return BossPrefab;
     }
 }
