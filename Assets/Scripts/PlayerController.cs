@@ -55,6 +55,17 @@ public class PlayerController : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
+        if (TryGetComponent<NetworkPlayerSetup>(out var net) && net.IsSpawned && !net.IsOwner)
+        {
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            var local = nm != null ? nm.LocalClient?.PlayerObject : null;
+            if (local != null && local.TryGetComponent<NetworkPlayerSetup>(out var localNet))
+            {
+                localNet.RequestDealDamageServerRpc(net.NetworkObject, amount);
+                return;
+            }
+        }
+
         _currentHp -= amount;
         if (_currentHp <= 0)
         {

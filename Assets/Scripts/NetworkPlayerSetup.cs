@@ -38,6 +38,27 @@ public class NetworkPlayerSetup : NetworkBehaviour
         RegenerateClientRpc();
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    public void RequestDealDamageServerRpc(NetworkObjectReference targetRef, float amount)
+    {
+        if (!targetRef.TryGet(out NetworkObject target)) return;
+        if (!target.TryGetComponent<NetworkPlayerSetup>(out var targetSetup)) return;
+
+        var rpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = new[] { target.OwnerClientId } }
+        };
+        targetSetup.ApplyDamageClientRpc(amount, rpcParams);
+    }
+
+    [ClientRpc]
+    public void ApplyDamageClientRpc(float amount, ClientRpcParams rpcParams = default)
+    {
+        if (!IsOwner) return;
+        if (TryGetComponent<PlayerController>(out var pc))
+            pc.TakeDamage(amount);
+    }
+
     [ClientRpc]
     private void RegenerateClientRpc()
     {
