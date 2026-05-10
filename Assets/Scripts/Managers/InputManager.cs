@@ -25,7 +25,7 @@ public class InputManager : MonoBehaviour
 
     void OnEnable()
     {
-        if (_actions == null)
+        if (_actions != null)
         {
             _actions.Enable();
         }
