@@ -137,6 +137,7 @@ MonoBehaviour:
   _healRate: 0.1
   _launchOnWallDestroyed: 1
   _takeoffCooldownDuration: 0.35
+  _hpFlashDuration: 0.4
 --- !u!114 &109459262745567538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -223,8 +224,8 @@ MonoBehaviour:
   _shrapnelShotsPerFrame: 1
   _shrapnelScale: 0.6
   _coneHalfAngle: 15
-  _sweepShotsPerFrame: 5
-  _sweepScale: 1
+  _sweepShotsPerFrame: 1
+  _sweepScale: 2
   _rotationSpeed: 60
   _targetChangeInterval: 2.5
   _playerBias: 0.8

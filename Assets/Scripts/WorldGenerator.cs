@@ -1,4 +1,4 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -35,38 +35,29 @@ public class WallBoxes
 
 public class WorldGenerator : MonoBehaviour
 {
-    const int scale = 32;
+    public const int Scale = 32;
     const float wallWidth = 1f;
 
-    [SerializeField] private AIInput _botPrefab;
-    [SerializeField] private PlayerController _botTarget;
-    [SerializeField] private int _botsPerBox = 10;
-    [SerializeField] private float _deathPaintScale = 1f;
+    public event Action<Vector3Int, Vector3> BoxOpened;
+    public event Action<Wall> WallAboutToBeDestroyed;
 
-    private Dictionary<Vector3Int, Box> boxes = new();
-    private Dictionary<Wall, WallBoxes> wallBoxes = new();
-    private List<AIInput> bots = new();
+    private readonly Dictionary<Vector3Int, Box> boxes = new();
+    private readonly Dictionary<Wall, WallBoxes> wallBoxes = new();
 
-    private float _score;
-    private bool _allBotsCleared;
-    private AIInput _currentBoss;
-    private int _bossesDefeated;
-    [SerializeField] private int _deathBurstFrames = 100;
     private Material _sharedWallMaterial;
     private Mesh _cachedCubeMesh;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-    private readonly HashSet<Vector3Int> _filledBoxes = new();
 
     public void Awake()
     {
-        if (_botTarget == null)
-        {
-            _botTarget = FindAnyObjectByType<PlayerInput>()?.GetComponent<PlayerController>();
-        }
-
-        SpawnFilled(new Vector3Int(0, 0, 0));
+        Spawn(Vector3Int.zero);
     }
-    
+
+    public void Start()
+    {
+        BoxOpened?.Invoke(Vector3Int.zero, Vector3.zero);
+    }
+
     public void Spawn(Vector3Int pos)
     {
         if (boxes.ContainsKey(pos)) return;
@@ -153,128 +144,48 @@ public class WorldGenerator : MonoBehaviour
 
     public void SpawnNeighbors(Vector3Int pos)
     {
-        Vector3Int up = pos + Vector3Int.up;
-        SpawnFilled(up);
-
-        Vector3Int down = pos + Vector3Int.down;
-        SpawnFilled(down);
-
-        Vector3Int left = pos + Vector3Int.left;
-        SpawnFilled(left);
-
-        Vector3Int right = pos + Vector3Int.right;
-        SpawnFilled(right);
-
-        Vector3Int forward = pos + Vector3Int.forward;
-        SpawnFilled(forward);
-
-        Vector3Int back = pos + Vector3Int.back;
-        SpawnFilled(back);
+        SpawnFilled(pos + Vector3Int.up);
+        SpawnFilled(pos + Vector3Int.down);
+        SpawnFilled(pos + Vector3Int.left);
+        SpawnFilled(pos + Vector3Int.right);
+        SpawnFilled(pos + Vector3Int.forward);
+        SpawnFilled(pos + Vector3Int.back);
     }
 
     public void SpawnFilled(Vector3Int pos)
     {
         Spawn(pos);
-        FillBox(pos);
+        BoxOpened?.Invoke(pos, Vector3.zero);
     }
 
     public void SpawnFilled(Vector3Int pos, Vector3 openingDirection)
     {
         Spawn(pos);
-        FillBox(pos, openingDirection);
+        BoxOpened?.Invoke(pos, openingDirection);
     }
 
-    public void FillBox(Vector3Int pos)
-    {
-        FillBox(pos, Vector3.zero);
-    }
-
-
-    /// <summary>
-    /// Determines how many bots to spawn for a given box position.
-    /// Override this to customize bot density per room.
-    /// </summary>
-    protected virtual int GetBotCount(Vector3Int pos)
-    {
-        return (Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z)) * _botsPerBox + 1;
-    }
-
-    /// <summary>
-    /// Determines bot max HP based on the box position.
-    /// Override this to customize bot toughness per room.
-    /// </summary>
-    protected virtual float GetBotHealth(Vector3Int pos)
-    {
-        int manhattan = Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z);
-        return manhattan * 0.5f + 0.1f;
-    }
-
-    public void FillBox(Vector3Int pos, Vector3 openingDirection)
-    {
-        if (_filledBoxes.Contains(pos) ||
-            !boxes.TryGetValue(pos, out _))
-        {
-            return;
-        }
-
-        if (_botPrefab == null)
-        {
-            Debug.LogWarning($"WorldGenerator cannot fill box {pos} because Bot Prefab is not assigned.", this);
-            return;
-        }
-
-        CleanupMissingBots();
-
-        var bossPrefab = _currentBoss == null ? GameManager.Instance.GetBoss(pos) : null;
-        if (bossPrefab != null)
-        {
-            AIInput boss = Instantiate(bossPrefab, GetBotSpawnPosition(pos, 0), Quaternion.identity);
-            boss.Target = _botTarget;
-            var contr = boss.GetComponent<PlayerController>();
-            contr.SetMaxHp(GetBotHealth(pos) * contr.MaxHp);
-            boss.Destroyed += HandleBotDestroyed;
-            _currentBoss = boss;
-            bots.Add(boss);
-            boss.SetVirtualAttachment(GetSpawnSurfaceNormal(openingDirection));
-            boss.LaunchImmediately();
-            return;
-        }
-
-        int botCount = GetBotCount(pos);
-        _allBotsCleared = false;
-        for (int i = 0; i < botCount; i++)
-        {
-            var prefab = GameManager.Instance.GetRandomEnemy(pos);
-            AIInput bot = Instantiate(prefab, GetBotSpawnPosition(pos, i), Quaternion.identity);
-            bot.Target = _botTarget;
-            bot.GetComponent<PlayerController>().SetMaxHp(GetBotHealth(pos));
-            bot.Destroyed += HandleBotDestroyed;
-            bots.Add(bot);
-            bot.SetVirtualAttachment(GetSpawnSurfaceNormal(openingDirection));
-            bot.LaunchImmediately();
-        }
-
-        _filledBoxes.Add(pos);
-    }
-
-    /// <summary>
-    /// Determines wall max health based on the box's Manhattan distance from center.
-    /// Newly spawned walls use this; pre-existing shared walls keep their current HP.
-    /// </summary>
     protected virtual int GetWallHealth(Vector3Int boxPos)
     {
         int manhattan = Mathf.Abs(boxPos.x) + Mathf.Abs(boxPos.y) + Mathf.Abs(boxPos.z);
         return manhattan * 30 + 8;
     }
 
+    public static Vector3 GetSpawnSurfaceNormal(Vector3 openingDirection)
+    {
+        return openingDirection.sqrMagnitude > Mathf.Epsilon
+            ? openingDirection.normalized
+            : Vector3.up;
+    }
+
     private Wall SpawnWall(Vector3Int pos, WallNormalDirection direction, Vector3Int boxPos)
     {
         GameObject wallObj = new($"Wall_{pos}_{direction}");
         wallObj.transform.SetParent(transform, false);
-        
+
         Wall wall = wallObj.AddComponent<Wall>();
         wall.MaxHealth = GetWallHealth(boxPos);
         wall.Destroyed += () => HandleWallDestroyed(wall, pos, direction);
+
         Vector3 worldPos = pos;
         if (direction == WallNormalDirection.X)
         {
@@ -288,13 +199,13 @@ public class WorldGenerator : MonoBehaviour
         {
             worldPos.z -= 0.5f;
         }
-        worldPos *= scale;
+        worldPos *= Scale;
         wallObj.transform.position = worldPos;
 
         MeshRenderer renderer = wallObj.AddComponent<MeshRenderer>();
         renderer.sharedMaterial = GetSharedWallMaterial();
         MaterialPropertyBlock propertyBlock = new();
-        propertyBlock.SetColor(BaseColorId, Random.Range(0.2f, 0.5f) * Color.white);
+        propertyBlock.SetColor(BaseColorId, UnityEngine.Random.Range(0.2f, 0.5f) * Color.white);
         renderer.SetPropertyBlock(propertyBlock);
 
         MeshFilter filter = wallObj.AddComponent<MeshFilter>();
@@ -307,13 +218,13 @@ public class WorldGenerator : MonoBehaviour
         switch (direction)
         {
             case WallNormalDirection.X:
-                wallObj.transform.localScale = new Vector3(wallWidth, scale, scale);
+                wallObj.transform.localScale = new Vector3(wallWidth, Scale, Scale);
                 break;
             case WallNormalDirection.Y:
-                wallObj.transform.localScale = new Vector3(scale, wallWidth, scale);
+                wallObj.transform.localScale = new Vector3(Scale, wallWidth, Scale);
                 break;
             case WallNormalDirection.Z:
-                wallObj.transform.localScale = new Vector3(scale, scale, wallWidth);
+                wallObj.transform.localScale = new Vector3(Scale, Scale, wallWidth);
                 break;
         }
 
@@ -322,8 +233,9 @@ public class WorldGenerator : MonoBehaviour
 
     private void HandleWallDestroyed(Wall wall, Vector3Int wallPos, WallNormalDirection direction)
     {
+        WallAboutToBeDestroyed?.Invoke(wall);
         wallBoxes.Remove(wall);
-        KillCharactersAttachedToWall(wall);
+
         GetAdjacentBoxPositions(wallPos, direction, out Vector3Int firstBoxPos, out Vector3Int secondBoxPos);
 
         bool hasFirstBox = boxes.ContainsKey(firstBoxPos);
@@ -344,28 +256,6 @@ public class WorldGenerator : MonoBehaviour
         Vector3Int openedBoxPos = hasFirstBox ? secondBoxPos : firstBoxPos;
         Vector3 openingDirection = GetOpeningDirectionForBox(openedBoxPos, wallPos, direction);
         SpawnFilled(openedBoxPos, openingDirection);
-    }
-
-    private void KillCharactersAttachedToWall(Wall wall)
-    {
-        Collider wallCollider = wall.GetComponent<Collider>();
-        if (wallCollider == null) return;
-
-        for (int i = bots.Count - 1; i >= 0; i--)
-        {
-            if (bots[i] == null) continue;
-
-            PlayerController controller = bots[i].GetComponent<PlayerController>();
-            if (controller != null && controller.AttachedWallCollider == wallCollider && !controller.LaunchOnWallDestroyed)
-            {
-                Destroy(bots[i].gameObject);
-            }
-        }
-
-        if (_botTarget != null && _botTarget.AttachedWallCollider == wallCollider)
-        {
-            Destroy(_botTarget.gameObject);
-        }
     }
 
     private static void GetAdjacentBoxPositions(
@@ -393,10 +283,7 @@ public class WorldGenerator : MonoBehaviour
 
     private void RegisterWallBox(Wall wall, Box box)
     {
-        if (wall == null || box == null)
-        {
-            return;
-        }
+        if (wall == null || box == null) return;
 
         if (!wallBoxes.TryGetValue(wall, out WallBoxes adjacentBoxes))
         {
@@ -426,43 +313,6 @@ public class WorldGenerator : MonoBehaviour
         return _sharedWallMaterial;
     }
 
-    private Vector3 GetBotSpawnPosition(Vector3Int boxPos, int botIndex)
-    {
-        float inset = GetBotHalfHeight() + 1f;
-        float halfRoom = scale * 0.5f - inset;
-        Vector3 center = new Vector3(boxPos.x * scale, boxPos.y * scale, boxPos.z * scale);
-        if (halfRoom <= 0f) return center;
-        return center + new Vector3(
-            Random.Range(-halfRoom, halfRoom),
-            Random.Range(-halfRoom, halfRoom),
-            Random.Range(-halfRoom, halfRoom));
-    }
-
-    private float GetBotHalfHeight()
-    {
-        if (_botPrefab.TryGetComponent<BoxCollider>(out BoxCollider boxCollider))
-        {
-            return Mathf.Max(boxCollider.size.y * Mathf.Abs(_botPrefab.transform.localScale.y) * 0.5f, 0.5f);
-        }
-
-        if (_botPrefab.TryGetComponent<SphereCollider>(out SphereCollider sphereCollider))
-        {
-            return Mathf.Max(sphereCollider.radius * Mathf.Abs(_botPrefab.transform.localScale.y), 0.5f);
-        }
-
-        if (_botPrefab.TryGetComponent<CapsuleCollider>(out CapsuleCollider capsuleCollider))
-        {
-            return Mathf.Max(capsuleCollider.height * Mathf.Abs(_botPrefab.transform.localScale.y) * 0.5f, 0.5f);
-        }
-
-        if (_botPrefab.GetComponent<Collider>() == null)
-        {
-            return 0.5f;
-        }
-
-        return 0.5f;
-    }
-
     private static Vector3 GetOpeningDirectionForBox(Vector3Int boxPos, Vector3Int wallPos, WallNormalDirection direction)
     {
         return direction switch
@@ -471,116 +321,5 @@ public class WorldGenerator : MonoBehaviour
             WallNormalDirection.Y => boxPos == wallPos ? Vector3.down : Vector3.up,
             _ => boxPos == wallPos ? Vector3.back : Vector3.forward
         };
-    }
-
-    private static Vector3 GetSpawnSurfaceNormal(Vector3 openingDirection)
-    {
-        return openingDirection.sqrMagnitude > Mathf.Epsilon
-            ? openingDirection.normalized
-            : Vector3.up;
-    }
-
-    private void HandleBotDestroyed(AIInput bot)
-    {
-        if (bot == null)
-        {
-            return;
-        }
-
-        bot.Destroyed -= HandleBotDestroyed;
-
-        if (bot == _currentBoss)
-        {
-            _currentBoss = null;
-            _bossesDefeated++;
-        }
-
-        // Add score proportional to bot's max HP
-        PlayerController botController = bot.GetComponent<PlayerController>();
-        if (botController != null)
-        {
-            _score += botController.MaxHp;
-        }
-
-        bots.Remove(bot);
-
-        // When the last alive bot is destroyed, apply 1.5x multiplier and spray paint
-        if (bots.Count == 0 && !_allBotsCleared)
-        {
-            _allBotsCleared = true;
-            _score *= 1.5f;
-
-            if (_botTarget != null)
-            {
-                PaintShooter playerShooter = _botTarget.GetComponent<PaintShooter>();
-                if (playerShooter != null)
-                    StartCoroutine(DeathBurstCoroutine(playerShooter, _botTarget, 10, _deathPaintScale));
-            }
-        }
-    }
-
-    private IEnumerator DeathBurstCoroutine(PaintShooter shooter, PlayerController player, int shotsPerFrame, float scale)
-    {
-        for (int frame = 0; frame < _deathBurstFrames; frame++)
-        {
-            Vector3? surfaceNormal = player.IsAttached ? player.CurrentSurfaceNormal : (Vector3?)null;
-            shooter.ShootDeathBurst(shotsPerFrame, scale, surfaceNormal);
-            yield return null;
-        }
-    }
-
-    private void OnGUI()
-    {
-        if (_botTarget == null || !_botTarget.TryGetComponent<PlayerInput>(out _))
-        {
-            return;
-        }
-
-        string scoreText = _score.ToString("F1");
-        float textWidth = 200f;
-        float textHeight = 30f;
-        float x = (Screen.width - textWidth) * 0.5f;
-        float y = 10f;
-
-        GUIStyle style = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 24,
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = Color.white }
-        };
-
-        GUI.Label(new Rect(x, y, textWidth, textHeight), scoreText, style);
-
-        if (_currentBoss != null)
-        {
-            var bossController = _currentBoss.GetComponent<PlayerController>();
-            float bossHpRatio = bossController.CurrentHp / bossController.MaxHp;
-
-            GUI.color = PlayerController.GetHpFlashColor(bossController.DamageFlash, bossController.HealFlash);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width * bossHpRatio, 20f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-        }
-
-        if (_bossesDefeated > 0)
-        {
-            GUIStyle bossCountStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 18,
-                alignment = TextAnchor.MiddleLeft,
-                normal = { textColor = Color.white }
-            };
-            GUI.Label(new Rect(6f, 22f, 160f, 24f), $"Bosses: {_bossesDefeated}", bossCountStyle);
-        }
-    }
-
-    private void CleanupMissingBots()
-    {
-        for (int i = bots.Count - 1; i >= 0; i--)
-        {
-            if (bots[i] == null)
-            {
-                bots.RemoveAt(i);
-            }
-        }
     }
 }
