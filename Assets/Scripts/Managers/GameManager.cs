@@ -34,6 +34,18 @@ public class GameManager : MonoBehaviour
     public void Restart()
     {
         _score = 0;
+
+        var nm = Unity.Netcode.NetworkManager.Singleton;
+        if (nm != null && nm.IsListening)
+        {
+            var local = nm.LocalClient?.PlayerObject;
+            if (local != null && local.TryGetComponent<NetworkPlayerSetup>(out var setup))
+            {
+                setup.RequestRestartServerRpc();
+                return;
+            }
+        }
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 

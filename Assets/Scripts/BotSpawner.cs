@@ -50,6 +50,21 @@ public class BotSpawner : MonoBehaviour
         return manhattan * 0.5f + 0.1f;
     }
 
+    public void ResetState()
+    {
+        StopAllCoroutines();
+        for (int i = _bots.Count - 1; i >= 0; i--)
+        {
+            if (_bots[i] == null) continue;
+            _bots[i].Destroyed -= HandleBotDestroyed;
+            Destroy(_bots[i].gameObject);
+        }
+        _bots.Clear();
+        _filledBoxes.Clear();
+        _currentBoss = null;
+        _allBotsCleared = false;
+    }
+
     private void FillBox(Vector3Int pos, Vector3 openingDirection)
     {
         if (_filledBoxes.Contains(pos)) return;

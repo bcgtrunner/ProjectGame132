@@ -64,6 +64,21 @@ public class WorldGenerator : MonoBehaviour
         BoxOpened?.Invoke(Vector3Int.zero, Vector3.zero);
     }
 
+    public void Regenerate()
+    {
+        for (int i = transform.childCount - 1; i >= 0; i--)
+            Destroy(transform.GetChild(i).gameObject);
+
+        boxes.Clear();
+        wallBoxes.Clear();
+
+        if (BotSpawner.Instance != null)
+            BotSpawner.Instance.ResetState();
+
+        Spawn(Vector3Int.zero);
+        BoxOpened?.Invoke(Vector3Int.zero, Vector3.zero);
+    }
+
     public void Spawn(Vector3Int pos)
     {
         if (boxes.ContainsKey(pos)) return;
