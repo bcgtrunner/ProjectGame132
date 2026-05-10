@@ -35,16 +35,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
     [ServerRpc]
     public void RequestRestartServerRpc()
     {
-        var nm = NetworkManager.Singleton;
-        if (nm == null) return;
-
-        foreach (var pair in nm.ConnectedClients)
-        {
-            var po = pair.Value.PlayerObject;
-            if (po == null) continue;
-            po.transform.position = GetSpawnOffset(pair.Key);
-        }
-
         RegenerateClientRpc();
     }
 
@@ -54,9 +44,17 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (WorldGenerator.Instance != null)
             WorldGenerator.Instance.Regenerate();
 
-        var local = NetworkManager.Singleton != null ? NetworkManager.Singleton.LocalClient?.PlayerObject : null;
-        if (local != null && local.TryGetComponent<PlayerController>(out var pc))
-            pc.SetMaxHp(pc.MaxHp);
+        var nm = NetworkManager.Singleton;
+        var local = nm != null ? nm.LocalClient?.PlayerObject : null;
+        if (local != null)
+        {
+            local.transform.position = GetSpawnOffset(nm.LocalClientId);
+            if (local.TryGetComponent<PlayerController>(out var pc))
+            {
+                pc.SetVirtualAttachment(Vector3.up);
+                pc.SetMaxHp(pc.MaxHp);
+            }
+        }
     }
 
     public static Vector3 GetSpawnOffset(ulong clientId)
