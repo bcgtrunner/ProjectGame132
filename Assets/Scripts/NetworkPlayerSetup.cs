@@ -122,6 +122,35 @@ public class NetworkPlayerSetup : NetworkBehaviour
         SpawnPaintClientRpc(point, normal, scale, color);
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    public void RequestSpawnBulletServerRpc(Vector3 point, Vector3 dir, float scale, float speed, ServerRpcParams rpcParams = default)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+
+        var ids = nm.ConnectedClientsIds;
+        var targets = new System.Collections.Generic.List<ulong>(ids.Count);
+        for (int i = 0; i < ids.Count; i++)
+            if (ids[i] != sender) targets.Add(ids[i]);
+        if (targets.Count == 0) return;
+
+        var clientRpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = targets.ToArray() }
+        };
+        SpawnBulletClientRpc(point, dir, scale, speed, clientRpcParams);
+    }
+
+    [ClientRpc]
+    private void SpawnBulletClientRpc(Vector3 point, Vector3 dir, float scale, float speed, ClientRpcParams rpcParams = default)
+    {
+        var nm = NetworkManager.Singleton;
+        var local = nm != null ? nm.LocalClient?.PlayerObject : null;
+        if (local != null && local.TryGetComponent<PaintShooter>(out var shooter))
+            shooter.SpawnVisualBullet(point, dir, scale, speed);
+    }
+
     [ClientRpc]
     private void SpawnPaintClientRpc(Vector3 point, Vector3 normal, float scale, Color color)
     {

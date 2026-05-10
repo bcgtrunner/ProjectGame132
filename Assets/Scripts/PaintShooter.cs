@@ -36,9 +36,15 @@ public class PaintShooter : MonoBehaviour
                     ? _collider.bounds.extents.magnitude + 0.5f
                     : 2f;
                 spawnOffset = Mathf.Max(spawnOffset, 2f);
-                var bullet = Instantiate(Bullet, transform.position + dir * spawnOffset, Quaternion.identity);
+                Vector3 spawnPos = transform.position + dir * spawnOffset;
+                var bullet = Instantiate(Bullet, spawnPos, Quaternion.identity);
                 bullet.transform.localScale *= scale;
                 bullet.Launch(dir, BulletSpeed);
+
+                if (IsLocalNetworkedPlayer(out var localNet))
+                {
+                    localNet.RequestSpawnBulletServerRpc(spawnPos, dir, scale, BulletSpeed);
+                }
                 bullet.OnHit += (collision) =>
                 {
                     var collisionObject = collision.collider.gameObject;
@@ -72,11 +78,9 @@ public class PaintShooter : MonoBehaviour
                         ? paintRenderer.sharedMaterial.GetColor("_BaseColor")
                         : Color.red;
 
-                    var nm = Unity.Netcode.NetworkManager.Singleton;
-                    var localPlayer = nm != null ? nm.LocalClient?.PlayerObject : null;
-                    if (nm != null && nm.IsListening && localPlayer != null && localPlayer.TryGetComponent<NetworkPlayerSetup>(out var localNet))
+                    if (IsLocalNetworkedPlayer(out var localNetForPaint))
                     {
-                        localNet.RequestSpawnPaintServerRpc(bestContact.point, bestContact.normal, scale, paintColor);
+                        localNetForPaint.RequestSpawnPaintServerRpc(bestContact.point, bestContact.normal, scale, paintColor);
                     }
                     else
                     {
@@ -88,6 +92,24 @@ public class PaintShooter : MonoBehaviour
                 };
             }
         }
+    }
+
+    public void SpawnVisualBullet(Vector3 point, Vector3 dir, float scale, float speed)
+    {
+        if (Bullet == null) return;
+        var bullet = Instantiate(Bullet, point, Quaternion.identity);
+        bullet.transform.localScale *= scale;
+        bullet.Launch(dir, speed);
+    }
+
+    private bool IsLocalNetworkedPlayer(out NetworkPlayerSetup localNet)
+    {
+        localNet = null;
+        var nm = Unity.Netcode.NetworkManager.Singleton;
+        if (nm == null || !nm.IsListening) return false;
+        var localPlayer = nm.LocalClient?.PlayerObject;
+        if (localPlayer == null || localPlayer.gameObject != gameObject) return false;
+        return localPlayer.TryGetComponent(out localNet);
     }
 
     public void SpawnPaintAt(Vector3 point, Vector3 normal, float scale, Color color)
