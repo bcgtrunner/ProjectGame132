@@ -53,6 +53,14 @@ public class PlayerController : MonoBehaviour
         _currentHp = maxHp;
     }
 
+    public void SetRemoteHp(float hp)
+    {
+        if (hp < _currentHp) _damageFlash.Reset();
+        else if (hp > _currentHp) _healFlash.Reset();
+        _currentHp = hp;
+        _previousHp = hp;
+    }
+
     public void TakeDamage(float amount)
     {
         if (TryGetComponent<NetworkPlayerSetup>(out var net) && net.IsSpawned && !net.IsOwner)

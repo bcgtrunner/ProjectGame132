@@ -31,7 +31,6 @@ public class PaintShooter : MonoBehaviour
                 return;
             }
 
-            if (hitGameObject.TryGetComponent<Wall>(out var wall))
             {
                 float spawnOffset = _collider != null
                     ? _collider.bounds.extents.magnitude + 0.5f
