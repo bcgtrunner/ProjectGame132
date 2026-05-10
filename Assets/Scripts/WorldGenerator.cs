@@ -48,8 +48,14 @@ public class WorldGenerator : MonoBehaviour
     private Mesh _cachedCubeMesh;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
+    public static WorldGenerator Instance;
+
     public void Awake()
     {
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(Instance);
         Spawn(Vector3Int.zero);
     }
 

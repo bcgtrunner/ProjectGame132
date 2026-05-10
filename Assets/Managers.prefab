@@ -45,11 +45,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ebde5fe092828408b037fcf93484ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  Enemies:
-  - {fileID: 109459262745567538, guid: 0c44832408154004f9601ac82b145df2, type: 3}
+  EnemyPrefabs:
   - {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
+  - {fileID: 109459262745567538, guid: 0c44832408154004f9601ac82b145df2, type: 3}
   - {fileID: 109459262745567538, guid: 9ca813903dd56574aa0261bdc1dffe5c, type: 3}
-  Boss: {fileID: 109459262745567538, guid: 97d450991274a3441a99280f63e961c1, type: 3}
+  BossPrefab: {fileID: 109459262745567538, guid: 97d450991274a3441a99280f63e961c1, type: 3}
+  Player: {fileID: 0}
 --- !u!114 &5590176674107043268
 MonoBehaviour:
   m_ObjectHideFlags: 0

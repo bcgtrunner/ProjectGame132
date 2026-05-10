@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using UnityEngine;
 
 public class InputManager : MonoBehaviour
@@ -44,6 +43,7 @@ public class InputManager : MonoBehaviour
     {
         if (_actions != null)
         {
+            _actions.Disable();
             _actions.Dispose();
         }
     }
