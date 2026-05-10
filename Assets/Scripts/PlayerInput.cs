@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -35,15 +36,28 @@ public class PlayerInput : MonoBehaviour
 
     private void Start()
     {
-        _camera = Camera.main;
         _controller.SetVirtualAttachment(Vector3.up);
-        Vector3 launchDirection = _camera != null ? _camera.transform.forward : transform.forward;
-        _controller.TryLaunch(launchDirection);
+
+        // In networked play the camera hasn't oriented to the player's look direction yet,
+        // so skip the auto-launch and let the player right-click when ready.
+        if (!TryGetComponent<NetworkObject>(out _))
+        {
+            Camera cam = GetCamera();
+            Vector3 launchDirection = cam != null ? cam.transform.forward : transform.forward;
+            _controller.TryLaunch(launchDirection);
+        }
+    }
+
+    private Camera GetCamera()
+    {
+        if (_camera == null) _camera = Camera.main;
+        return _camera;
     }
 
     private void Update()
     {
-        Vector3 direction = _camera != null ? _camera.transform.forward : transform.forward;
+        Camera cam = GetCamera();
+        Vector3 direction = cam != null ? cam.transform.forward : transform.forward;
         if (_actions.UI.Escape.WasPerformedThisFrame())
         {
             GameManager.Instance.GoToMenu();
