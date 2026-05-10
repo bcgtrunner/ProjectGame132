@@ -666,6 +666,7 @@ GameObject:
   m_Component:
   - component: {fileID: 957641014}
   - component: {fileID: 957641013}
+  - component: {fileID: 957641015}
   m_Layer: 0
   m_Name: WorldGenerator
   m_TagString: Untagged
@@ -685,11 +686,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 204562ad405c0924f80beedc386196b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldGenerator
-  _botPrefab: {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
-  _botTarget: {fileID: 485187041}
-  _botsPerBox: 3
-  _deathPaintScale: 1
-  _deathBurstFrames: 100
 --- !u!4 &957641014
 Transform:
   m_ObjectHideFlags: 0
@@ -705,6 +701,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &957641015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 957641012}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e151c5040aa24e458355ff45ca30d74, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BotSpawner
+  _worldGenerator: {fileID: 957641013}
+  _botPrefab: {fileID: 5656510015783761743}
+  _botTarget: {fileID: 485187041}
+  _botsPerBox: 4
+  _deathPaintScale: 1
+  _deathBurstFrames: 100
 --- !u!1 &1018053933
 GameObject:
   m_ObjectHideFlags: 0
@@ -1530,6 +1544,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
+--- !u!114 &5656510015783761743 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 109459262745567538, guid: 017a944ac45133b4e8c9cc1886e24493, type: 3}
+  m_PrefabInstance: {fileID: 5656510015783761742}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ae7f2ab6ca9a044eb6fa9003b545c48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AIInput
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
