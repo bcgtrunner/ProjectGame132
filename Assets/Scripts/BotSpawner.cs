@@ -1,0 +1,230 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BotSpawner : MonoBehaviour
+{
+    [SerializeField] private WorldGenerator _worldGenerator;
+    [SerializeField] private AIInput _botPrefab;
+    [SerializeField] private PlayerController _botTarget;
+    [SerializeField] private int _botsPerBox = 10;
+    [SerializeField] private float _deathPaintScale = 1f;
+    [SerializeField] private int _deathBurstFrames = 100;
+
+    private readonly List<AIInput> _bots = new();
+    private readonly HashSet<Vector3Int> _filledBoxes = new();
+    private float _score;
+    private bool _allBotsCleared;
+    private AIInput _currentBoss;
+    private int _bossesDefeated;
+
+    private void Awake()
+    {
+        if (_botTarget == null)
+            _botTarget = FindAnyObjectByType<PlayerInput>()?.GetComponent<PlayerController>();
+
+        _worldGenerator.BoxOpened += FillBox;
+        _worldGenerator.WallAboutToBeDestroyed += KillCharactersAttachedToWall;
+    }
+
+    private void OnDestroy()
+    {
+        _worldGenerator.BoxOpened -= FillBox;
+        _worldGenerator.WallAboutToBeDestroyed -= KillCharactersAttachedToWall;
+    }
+
+    protected virtual int GetBotCount(Vector3Int pos)
+    {
+        return (Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z)) * _botsPerBox + 1;
+    }
+
+    protected virtual float GetBotHealth(Vector3Int pos)
+    {
+        int manhattan = Mathf.Abs(pos.x) + Mathf.Abs(pos.y) + Mathf.Abs(pos.z);
+        return manhattan * 0.5f + 0.1f;
+    }
+
+    private void FillBox(Vector3Int pos, Vector3 openingDirection)
+    {
+        if (_filledBoxes.Contains(pos)) return;
+
+        if (_botPrefab == null)
+        {
+            Debug.LogWarning($"BotSpawner cannot fill box {pos} because Bot Prefab is not assigned.", this);
+            return;
+        }
+
+        CleanupMissingBots();
+
+        var bossPrefab = _currentBoss == null ? GameManager.Instance.GetBoss(pos) : null;
+        if (bossPrefab != null)
+        {
+            AIInput boss = Instantiate(bossPrefab, GetBotSpawnPosition(pos, 0), Quaternion.identity);
+            boss.Target = _botTarget;
+            var contr = boss.GetComponent<PlayerController>();
+            contr.SetMaxHp(GetBotHealth(pos) * contr.MaxHp);
+            boss.Destroyed += HandleBotDestroyed;
+            _currentBoss = boss;
+            _bots.Add(boss);
+            boss.SetVirtualAttachment(WorldGenerator.GetSpawnSurfaceNormal(openingDirection));
+            boss.LaunchImmediately();
+            return;
+        }
+
+        int botCount = GetBotCount(pos);
+        _allBotsCleared = false;
+        for (int i = 0; i < botCount; i++)
+        {
+            var prefab = GameManager.Instance.GetRandomEnemy(pos);
+            AIInput bot = Instantiate(prefab, GetBotSpawnPosition(pos, i), Quaternion.identity);
+            bot.Target = _botTarget;
+            bot.GetComponent<PlayerController>().SetMaxHp(GetBotHealth(pos));
+            bot.Destroyed += HandleBotDestroyed;
+            _bots.Add(bot);
+            bot.SetVirtualAttachment(WorldGenerator.GetSpawnSurfaceNormal(openingDirection));
+            bot.LaunchImmediately();
+        }
+
+        _filledBoxes.Add(pos);
+    }
+
+    private void KillCharactersAttachedToWall(Wall wall)
+    {
+        Collider wallCollider = wall.GetComponent<Collider>();
+        if (wallCollider == null) return;
+
+        for (int i = _bots.Count - 1; i >= 0; i--)
+        {
+            if (_bots[i] == null) continue;
+
+            PlayerController controller = _bots[i].GetComponent<PlayerController>();
+            if (controller != null && controller.AttachedWallCollider == wallCollider && !controller.LaunchOnWallDestroyed)
+                Destroy(_bots[i].gameObject);
+        }
+
+        if (_botTarget != null && _botTarget.AttachedWallCollider == wallCollider)
+            Destroy(_botTarget.gameObject);
+    }
+
+    private void HandleBotDestroyed(AIInput bot)
+    {
+        if (bot == null) return;
+
+        bot.Destroyed -= HandleBotDestroyed;
+
+        if (bot == _currentBoss)
+        {
+            _currentBoss = null;
+            _bossesDefeated++;
+        }
+
+        PlayerController botController = bot.GetComponent<PlayerController>();
+        if (botController != null)
+            _score += botController.MaxHp;
+
+        _bots.Remove(bot);
+
+        if (_bots.Count == 0 && !_allBotsCleared)
+        {
+            _allBotsCleared = true;
+            _score *= 1.5f;
+
+            if (_botTarget != null)
+            {
+                PaintShooter playerShooter = _botTarget.GetComponent<PaintShooter>();
+                if (playerShooter != null)
+                    StartCoroutine(DeathBurstCoroutine(playerShooter, _botTarget, 10, _deathPaintScale));
+            }
+        }
+    }
+
+    private IEnumerator DeathBurstCoroutine(PaintShooter shooter, PlayerController player, int shotsPerFrame, float scale)
+    {
+        for (int frame = 0; frame < _deathBurstFrames; frame++)
+        {
+            Vector3? surfaceNormal = player.IsAttached ? player.CurrentSurfaceNormal : (Vector3?)null;
+            shooter.ShootDeathBurst(shotsPerFrame, scale, surfaceNormal);
+            yield return null;
+        }
+    }
+
+    private Vector3 GetBotSpawnPosition(Vector3Int boxPos, int botIndex)
+    {
+        float inset = GetBotHalfHeight() + 1f;
+        float halfRoom = WorldGenerator.Scale * 0.5f - inset;
+        Vector3 center = new Vector3(
+            boxPos.x * WorldGenerator.Scale,
+            boxPos.y * WorldGenerator.Scale,
+            boxPos.z * WorldGenerator.Scale);
+        if (halfRoom <= 0f) return center;
+        return center + new Vector3(
+            Random.Range(-halfRoom, halfRoom),
+            Random.Range(-halfRoom, halfRoom),
+            Random.Range(-halfRoom, halfRoom));
+    }
+
+    private float GetBotHalfHeight()
+    {
+        if (_botPrefab.TryGetComponent<BoxCollider>(out BoxCollider boxCollider))
+            return Mathf.Max(boxCollider.size.y * Mathf.Abs(_botPrefab.transform.localScale.y) * 0.5f, 0.5f);
+
+        if (_botPrefab.TryGetComponent<SphereCollider>(out SphereCollider sphereCollider))
+            return Mathf.Max(sphereCollider.radius * Mathf.Abs(_botPrefab.transform.localScale.y), 0.5f);
+
+        if (_botPrefab.TryGetComponent<CapsuleCollider>(out CapsuleCollider capsuleCollider))
+            return Mathf.Max(capsuleCollider.height * Mathf.Abs(_botPrefab.transform.localScale.y) * 0.5f, 0.5f);
+
+        return 0.5f;
+    }
+
+    private void CleanupMissingBots()
+    {
+        for (int i = _bots.Count - 1; i >= 0; i--)
+        {
+            if (_bots[i] == null)
+                _bots.RemoveAt(i);
+        }
+    }
+
+    private void OnGUI()
+    {
+        if (_botTarget == null || !_botTarget.TryGetComponent<PlayerInput>(out _))
+            return;
+
+        string scoreText = _score.ToString("F1");
+        float textWidth = 200f;
+        float textHeight = 30f;
+        float x = (Screen.width - textWidth) * 0.5f;
+        float y = 10f;
+
+        GUIStyle style = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 24,
+            alignment = TextAnchor.MiddleCenter,
+            normal = { textColor = Color.white }
+        };
+
+        GUI.Label(new Rect(x, y, textWidth, textHeight), scoreText, style);
+
+        if (_currentBoss != null)
+        {
+            var bossController = _currentBoss.GetComponent<PlayerController>();
+            float bossHpRatio = bossController.CurrentHp / bossController.MaxHp;
+
+            GUI.color = PlayerController.GetHpFlashColor(bossController.DamageFlash, bossController.HealFlash);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width * bossHpRatio, 20f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+        }
+
+        if (_bossesDefeated > 0)
+        {
+            GUIStyle bossCountStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 18,
+                alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = Color.white }
+            };
+            GUI.Label(new Rect(6f, 22f, 160f, 24f), $"Bosses: {_bossesDefeated}", bossCountStyle);
+        }
+    }
+}
