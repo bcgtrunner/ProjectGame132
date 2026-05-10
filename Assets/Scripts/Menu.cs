@@ -21,6 +21,19 @@ public class Menu : MonoBehaviour
         clientButton.onClick.AddListener(OnClientButtonClicked);
     }
 
+    private void Awake()
+    {
+        NetworkManager.Singleton.OnClientConnectedCallback += id =>
+        {
+            Debug.Log($"CONNECTED: {id}");
+        };
+
+        NetworkManager.Singleton.OnClientDisconnectCallback += id =>
+        {
+            Debug.Log($"DISCONNECTED: {id}");
+        };
+    }
+
     private void OnPlayButtonClicked()
     {
         SceneManager.LoadScene(1);
@@ -33,18 +46,25 @@ public class Menu : MonoBehaviour
     private void OnHostButtonClicked()
     {
         Debug.Log("Host button clicked");
-        NetworkManager.Singleton.StartHost();
+        var transport = GetComponent<UnityTransport>();
+
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        transport.ConnectionData.ServerListenAddress = "0.0.0.0";
+        transport.ConnectionData.Port = 7777;
+        Debug.Log(NetworkManager.Singleton.IsListening);
+
+        NetworkManager.Singleton.StartHost();
         
     }
     private void OnClientButtonClicked()
     {
         Debug.Log("Client button clicked");
         var transport = GetComponent<UnityTransport>();
-        transport.ConnectionData.Address = "10.10.228.132";
+        transport.ConnectionData.Address = "192.168.0.104";
         transport.ConnectionData.Port = 7777;
 
-        NetworkManager.Singleton.StartClient();
+        bool result = NetworkManager.Singleton.StartClient();
+        Debug.Log("StartClient result: " + result);
     }
 
     public void GetLocalIPAddress()
