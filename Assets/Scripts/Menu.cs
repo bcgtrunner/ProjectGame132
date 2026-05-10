@@ -32,7 +32,6 @@ public class Menu : MonoBehaviour
 
     private void OnHostButtonClicked()
     {
-        if (NetworkManager.Singleton.IsHost) return;
         Debug.Log("Host button clicked");
         NetworkManager.Singleton.StartHost();
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
@@ -40,7 +39,6 @@ public class Menu : MonoBehaviour
     }
     private void OnClientButtonClicked()
     {
-        if (NetworkManager.Singleton.IsClient) return;
         Debug.Log("Client button clicked");
         var transport = GetComponent<UnityTransport>();
         transport.ConnectionData.Address = "10.10.228.132";
