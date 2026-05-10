@@ -66,6 +66,11 @@ public class WorldGenerator : MonoBehaviour
 
     public void Regenerate()
     {
+        foreach (var paint in FindObjectsByType<Paint>(FindObjectsSortMode.None))
+            Destroy(paint.gameObject);
+        foreach (var bullet in FindObjectsByType<Bullet>(FindObjectsSortMode.None))
+            Destroy(bullet.gameObject);
+
         for (int i = transform.childCount - 1; i >= 0; i--)
             Destroy(transform.GetChild(i).gameObject);
 
