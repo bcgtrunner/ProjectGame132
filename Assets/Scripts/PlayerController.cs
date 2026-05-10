@@ -27,7 +27,7 @@ public class PlayerController : MonoBehaviour
     private readonly RaycastHit[] _castHitBuffer = new RaycastHit[16];
     private readonly Collider[] _overlapBuffer = new Collider[16];
 
-    public event Action<Vector3> AttachedToWall;
+    public event Action<Vector3, Quaternion> AttachedToWall;
     public Vector3 CurrentSurfaceNormal { get; private set; } = Vector3.up;
     public bool IsTakeoffOnCooldown => !_takeoffCooldown.Over();
     public float TakeoffCooldownProgress => _takeoffCooldown.Progress();
@@ -178,7 +178,7 @@ public class PlayerController : MonoBehaviour
         UnsubscribeFromWall();
         _attachedWallCollider = null;
         _state = PlayerState.Attached;
-        AttachedToWall?.Invoke(CurrentSurfaceNormal);
+        AttachedToWall?.Invoke(CurrentSurfaceNormal, transform.rotation);
     }
 
     private void UpdateFlying()
@@ -234,11 +234,12 @@ public class PlayerController : MonoBehaviour
         Quaternion targetRotation = Quaternion.FromToRotation(transform.rotation * localFaceNormal, -surfaceNormal) * transform.rotation;
         Vector3 adjustedTargetPosition = GetSafeSurfacePoint(targetPosition, surfaceNormal, targetRotation, hitCollider);
 
+        // Notify listeners BEFORE rotating so the camera can capture its true pre-snap world rotation.
+        CurrentSurfaceNormal = surfaceNormal;
+        AttachedToWall?.Invoke(surfaceNormal, targetRotation);
+
         transform.rotation = targetRotation;
         transform.position = adjustedTargetPosition - GetWorldOffsetToTouchingFace(localFaceNormal, targetRotation);
-
-        CurrentSurfaceNormal = surfaceNormal;
-        AttachedToWall?.Invoke(surfaceNormal);
     }
 
     private Vector3 GetSafeSurfacePoint(Vector3 targetPosition, Vector3 surfaceNormal, Quaternion targetRotation, Collider hitCollider)

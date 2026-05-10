@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Sockets;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -8,95 +6,64 @@ using UnityEngine.UI;
 
 public class Menu : MonoBehaviour
 {
+    private const string MultiplayerSceneName = "Multiplayer";
+    private const string HostAddress = "192.168.0.104";
+    private const ushort Port = 7777;
+
     [SerializeField] private Button playButton;
     [SerializeField] private Button quitButton;
     [SerializeField] private Button hostButton;
     [SerializeField] private Button clientButton;
 
-    private void Start()
-    {
-        playButton.onClick.AddListener(OnPlayButtonClicked);
-        quitButton.onClick.AddListener(OnQuitButtonClicked);
-        hostButton.onClick.AddListener(OnHostButtonClicked);
-        clientButton.onClick.AddListener(OnClientButtonClicked);
-    }
-
     private void Awake()
     {
-        NetworkManager.Singleton.OnClientConnectedCallback += id =>
+        // After returning from a multiplayer session NetworkManager persists in DontDestroyOnLoad,
+        // so the Networking GameObject embedded in this scene becomes a duplicate — destroy it.
+        if (NetworkManager.Singleton != null)
         {
-            Debug.Log($"CONNECTED: {id}");
-        };
-
-        NetworkManager.Singleton.OnClientDisconnectCallback += id =>
-        {
-            Debug.Log($"DISCONNECTED: {id}");
-        };
-    }
-
-    private void OnPlayButtonClicked()
-    {
-        SceneManager.LoadScene(1);
-    }
-    private void OnQuitButtonClicked()
-    {
-        Application.Quit();
-    }
-
-    private void OnHostButtonClicked()
-    {
-        Debug.Log("Host button clicked");
-        var transport = GetComponent<UnityTransport>();
-
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        transport.ConnectionData.ServerListenAddress = "0.0.0.0";
-        transport.ConnectionData.Port = 7777;
-        Debug.Log(NetworkManager.Singleton.IsListening);
-
-        NetworkManager.Singleton.StartHost();
-        
-    }
-    private void OnClientButtonClicked()
-    {
-        Debug.Log("Client button clicked");
-        var transport = GetComponent<UnityTransport>();
-        transport.ConnectionData.Address = "192.168.0.104";
-        transport.ConnectionData.Port = 7777;
-
-        bool result = NetworkManager.Singleton.StartClient();
-        Debug.Log("StartClient result: " + result);
-    }
-
-    public void GetLocalIPAddress()
-    {
-        var host = Dns.GetHostEntry(Dns.GetHostName());
-
-        foreach (var ip in host.AddressList)
-        {
-            if (ip.AddressFamily == AddressFamily.InterNetwork)
+            foreach (var nm in FindObjectsByType<NetworkManager>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                Debug.Log(ip.ToString());
+                if (nm != NetworkManager.Singleton && nm.gameObject.scene == gameObject.scene)
+                    Destroy(nm.gameObject);
             }
         }
     }
 
-    private void OnClientConnected(ulong clientId)
+    private void Start()
     {
-        Debug.Log($"Client {clientId} connected");
-        ClientRpcParams clientRpcParams = new ClientRpcParams
+        playButton.onClick.AddListener(() => SceneManager.LoadScene(1));
+        quitButton.onClick.AddListener(Application.Quit);
+        hostButton.onClick.AddListener(StartHost);
+        clientButton.onClick.AddListener(StartClient);
+    }
+
+    private void StartHost()
+    {
+        if (!ConfigureTransport("0.0.0.0", "0.0.0.0")) return;
+        if (!NetworkManager.Singleton.StartHost()) return;
+        NetworkManager.Singleton.SceneManager.LoadScene(MultiplayerSceneName, LoadSceneMode.Single);
+    }
+
+    private void StartClient()
+    {
+        if (!ConfigureTransport(HostAddress, "0.0.0.0")) return;
+        NetworkManager.Singleton.StartClient();
+    }
+
+    private static bool ConfigureTransport(string address, string listenAddress)
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null)
         {
-            Send = new ClientRpcSendParams
-            {
-                TargetClientIds = new ulong[] { clientId }
-            }
-        };
-
-        ToClient("Welcome to the server!", clientRpcParams);
+            Debug.LogError("NetworkManager.Singleton is missing from the Menu scene.");
+            return false;
+        }
+        var transport = nm.GetComponent<UnityTransport>();
+        transport.ConnectionData.Address = address;
+        transport.ConnectionData.ServerListenAddress = listenAddress;
+        transport.ConnectionData.Port = Port;
+        return true;
     }
 
-    [ClientRpc]
-    private void ToClient(string message, ClientRpcParams clientRpcParams = default)
-    {
-        Debug.Log($"Server says: {message}");
-    }
+    
 }

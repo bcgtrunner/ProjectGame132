@@ -13,35 +13,32 @@ public class CameraController : MonoBehaviour
     private Quaternion _baseLocalRotation;
     private Transform _playerTransform;
     private Camera _camera;
-    private Quaternion _lastWorldRotation;
-    private bool _hasLastWorldRotation;
 
     private void Awake()
     {
-        _actions = InputManager.Instance.Actions;
         _camera = GetComponent<Camera>();
-
         if (_playerController == null)
             _playerController = FindAnyObjectByType<PlayerController>();
-
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    private void Start()
+    {
+        _actions = InputManager.Instance.Actions;
+        if (_playerController != null && _playerTransform == null)
+            BindToPlayer();
     }
 
     public void AssignPlayerController(PlayerController playerController)
     {
         _playerController = playerController;
+        if (isActiveAndEnabled && _playerTransform == null)
+            BindToPlayer();
     }
 
-    private void Start()
+    private void BindToPlayer()
     {
-        if (_playerController == null)
-        {
-            Debug.LogWarning("CameraController could not find a PlayerController in the scene.");
-            enabled = false;
-            return;
-        }
-
         _playerTransform = _playerController.transform;
         transform.SetParent(_playerTransform, false);
         transform.localPosition = Vector3.zero;
@@ -56,17 +53,14 @@ public class CameraController : MonoBehaviour
 
         _playerController.AttachedToWall += HandlePlayerAttachedToWall;
 
-        HandlePlayerAttachedToWall(_playerController.CurrentSurfaceNormal);
-        _lastWorldRotation = transform.rotation;
-        _hasLastWorldRotation = true;
+        HandlePlayerAttachedToWall(_playerController.CurrentSurfaceNormal, _playerTransform.rotation);
     }
 
     private Quaternion ComposeLocalRotation() => _baseLocalRotation * Quaternion.Euler(_pitch, _yaw, 0f);
 
     private void LateUpdate()
     {
-        if (_playerTransform == null)
-            return;
+        if (_playerTransform == null) return;
 
         Vector2 lookDelta = _actions.Player.Look.ReadValue<Vector2>();
         _yaw += lookDelta.x * _rotationSensitivity;
@@ -74,15 +68,14 @@ public class CameraController : MonoBehaviour
 
         transform.localPosition = Vector3.zero;
         transform.localRotation = ComposeLocalRotation();
-        _lastWorldRotation = transform.rotation;
-        _hasLastWorldRotation = true;
     }
 
-    private void HandlePlayerAttachedToWall(Vector3 surfaceNormal)
+    private void HandlePlayerAttachedToWall(Vector3 surfaceNormal, Quaternion newPlayerRotation)
     {
-        // Preserve world-space camera direction across the parent rotation snap
-        Quaternion preservedWorldRotation = _hasLastWorldRotation ? _lastWorldRotation : transform.rotation;
-        _baseLocalRotation = Quaternion.Inverse(_playerTransform.rotation) * preservedWorldRotation;
+        // Capture the camera's true world rotation BEFORE the parent snaps to newPlayerRotation,
+        // then derive the local rotation that keeps the same world facing under the new parent rotation.
+        Quaternion preservedWorldRotation = transform.rotation;
+        _baseLocalRotation = Quaternion.Inverse(newPlayerRotation) * preservedWorldRotation;
         _yaw = 0f;
         _pitch = 0f;
         transform.localRotation = ComposeLocalRotation();
