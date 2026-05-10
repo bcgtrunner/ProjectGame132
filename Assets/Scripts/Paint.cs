@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Paint : MonoBehaviour
 {
     private Wall attachedWall;
+    private readonly HashSet<PlayerController> _touching = new();
 
     public void AttachTo(Wall wall)
     {
@@ -12,7 +14,7 @@ public class Paint : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent<PlayerController>(out var controller))
+        if (other.TryGetComponent<PlayerController>(out var controller) && _touching.Add(controller))
         {
             controller.OnPaintContact(true);
         }
@@ -20,7 +22,7 @@ public class Paint : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.TryGetComponent<PlayerController>(out var controller))
+        if (other.TryGetComponent<PlayerController>(out var controller) && _touching.Remove(controller))
         {
             controller.OnPaintContact(false);
         }
@@ -33,6 +35,13 @@ public class Paint : MonoBehaviour
 
     private void OnDestroy()
     {
+        foreach (var controller in _touching)
+        {
+            if (controller != null)
+                controller.OnPaintContact(false);
+        }
+        _touching.Clear();
+
         if (attachedWall != null)
             attachedWall.Destroyed -= Destroy;
     }
