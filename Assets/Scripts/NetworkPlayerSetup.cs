@@ -113,6 +113,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
                 pc.SetVirtualAttachment(Vector3.up);
                 pc.SetMaxHp(pc.MaxHp);
             }
+            if (local.TryGetComponent<PlayerInput>(out var pi))
+            {
+                pi.ResetState();
+            }
         }
     }
 

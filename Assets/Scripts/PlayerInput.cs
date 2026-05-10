@@ -34,6 +34,13 @@ public class PlayerInput : MonoBehaviour
         _clickCooldown = new Cooldown(_clickCooldownDuration);
     }
 
+    public void ResetState()
+    {
+        _queuedShots = 0;
+        _hasWheelInput = false;
+        _isCharging = false;
+    }
+
     private void Start()
     {
         _controller.SetVirtualAttachment(Vector3.up);
