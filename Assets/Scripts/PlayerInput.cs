@@ -28,7 +28,7 @@ public class PlayerInput : MonoBehaviour
     {
         _controller = GetComponent<PlayerController>();
         _shooter = GetComponent<PaintShooter>();
-        _actions = new InputSystem_Actions();
+        _actions = InputManager.Instance.Actions;
         _shotCooldown = new Cooldown(_shotCooldownDuration);
         _clickCooldown = new Cooldown(_clickCooldownDuration);
     }
@@ -40,9 +40,6 @@ public class PlayerInput : MonoBehaviour
         Vector3 launchDirection = _camera != null ? _camera.transform.forward : transform.forward;
         _controller.TryLaunch(launchDirection);
     }
-
-    private void OnEnable() => _actions.UI.Enable();
-    private void OnDisable() => _actions.UI.Disable();
 
     private void Update()
     {
@@ -142,6 +139,4 @@ public class PlayerInput : MonoBehaviour
 
         GUI.color = Color.white;
     }
-
-    private void OnDestroy() => _actions?.Dispose();
 }

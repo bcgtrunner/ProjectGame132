@@ -18,9 +18,7 @@ public class CameraController : MonoBehaviour
 
     private void Awake()
     {
-        _actions = new InputSystem_Actions();
-        _actions.Player.Enable();
-        _actions.UI.Enable();
+        _actions = InputManager.Instance.Actions;
         _camera = GetComponent<Camera>();
 
         if (_playerController == null)
@@ -116,7 +114,5 @@ public class CameraController : MonoBehaviour
     {
         if (_playerController != null)
             _playerController.AttachedToWall -= HandlePlayerAttachedToWall;
-
-        _actions?.Dispose();
     }
 }
