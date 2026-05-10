@@ -4,10 +4,29 @@ using UnityEngine;
 [RequireComponent(typeof(PlayerController))]
 public class NetworkPlayerSetup : NetworkBehaviour
 {
+    public NetworkVariable<float> SyncedHp = new(
+        0f,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner);
+
+    private PlayerController _controller;
+    private float _lastSentHp;
+
+    private void Awake()
+    {
+        _controller = GetComponent<PlayerController>();
+    }
+
     public override void OnNetworkSpawn()
     {
-        var controller = GetComponent<PlayerController>();
+        var controller = _controller;
         var input = GetComponent<PlayerInput>();
+
+        SyncedHp.OnValueChanged += OnSyncedHpChanged;
+        if (!IsOwner)
+        {
+            controller.SetRemoteHp(SyncedHp.Value);
+        }
 
         if (!IsOwner)
         {
@@ -15,6 +34,8 @@ public class NetworkPlayerSetup : NetworkBehaviour
             controller.enabled = false;
             return;
         }
+        _lastSentHp = controller.CurrentHp;
+        SyncedHp.Value = controller.CurrentHp;
         if (GameManager.Instance != null) GameManager.Instance.Player = controller;
 
         var camera = Camera.main;
@@ -27,9 +48,26 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        SyncedHp.OnValueChanged -= OnSyncedHpChanged;
         if (!IsOwner) return;
         if (GameManager.Instance != null && GameManager.Instance.Player == GetComponent<PlayerController>())
             GameManager.Instance.Player = null;
+    }
+
+    private void OnSyncedHpChanged(float previous, float current)
+    {
+        if (IsOwner || _controller == null) return;
+        _controller.SetRemoteHp(current);
+    }
+
+    private void Update()
+    {
+        if (!IsSpawned || !IsOwner || _controller == null) return;
+        if (Mathf.Abs(_controller.CurrentHp - _lastSentHp) > 0.001f)
+        {
+            _lastSentHp = _controller.CurrentHp;
+            SyncedHp.Value = _controller.CurrentHp;
+        }
     }
 
     [ServerRpc]
