@@ -116,6 +116,21 @@ public class NetworkPlayerSetup : NetworkBehaviour
         }
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    public void RequestSpawnPaintServerRpc(Vector3 point, Vector3 normal, float scale, Color color)
+    {
+        SpawnPaintClientRpc(point, normal, scale, color);
+    }
+
+    [ClientRpc]
+    private void SpawnPaintClientRpc(Vector3 point, Vector3 normal, float scale, Color color)
+    {
+        var nm = NetworkManager.Singleton;
+        var local = nm != null ? nm.LocalClient?.PlayerObject : null;
+        if (local != null && local.TryGetComponent<PaintShooter>(out var shooter))
+            shooter.SpawnPaintAt(point, normal, scale, color);
+    }
+
     public static Vector3 GetSpawnOffset(ulong clientId)
     {
         return new Vector3((clientId % 4) * 2f, 0f, ((clientId / 4) % 4) * 2f);
