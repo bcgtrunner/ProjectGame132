@@ -123,6 +123,20 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
+    public void RequestDamageWallServerRpc(Vector3Int wallPos, int direction, float amount)
+    {
+        DamageWallClientRpc(wallPos, direction, amount);
+    }
+
+    [ClientRpc]
+    private void DamageWallClientRpc(Vector3Int wallPos, int direction, float amount)
+    {
+        if (WorldGenerator.Instance == null) return;
+        if (WorldGenerator.Instance.TryGetWall(wallPos, (WallNormalDirection)direction, out var wall) && wall != null)
+            wall.Damage(amount);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
     public void RequestSpawnBulletServerRpc(Vector3 point, Vector3 dir, float scale, float speed, ServerRpcParams rpcParams = default)
     {
         ulong sender = rpcParams.Receive.SenderClientId;

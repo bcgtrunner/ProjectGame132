@@ -43,6 +43,7 @@ public class WorldGenerator : MonoBehaviour
 
     private readonly Dictionary<Vector3Int, Box> boxes = new();
     private readonly Dictionary<Wall, WallBoxes> wallBoxes = new();
+    private readonly Dictionary<long, Wall> wallsByKey = new();
 
     private Material _sharedWallMaterial;
     private Mesh _cachedCubeMesh;
@@ -76,6 +77,7 @@ public class WorldGenerator : MonoBehaviour
 
         boxes.Clear();
         wallBoxes.Clear();
+        wallsByKey.Clear();
 
         if (BotSpawner.Instance != null)
             BotSpawner.Instance.ResetState();
@@ -210,6 +212,9 @@ public class WorldGenerator : MonoBehaviour
 
         Wall wall = wallObj.AddComponent<Wall>();
         wall.MaxHealth = GetWallHealth(boxPos);
+        wall.GridPos = pos;
+        wall.Direction = direction;
+        wallsByKey[GetWallKey(pos, direction)] = wall;
         wall.Destroyed += () => HandleWallDestroyed(wall, pos, direction);
 
         Vector3 worldPos = pos;
@@ -257,10 +262,27 @@ public class WorldGenerator : MonoBehaviour
         return wall;
     }
 
+    public bool TryGetWall(Vector3Int pos, WallNormalDirection direction, out Wall wall)
+    {
+        return wallsByKey.TryGetValue(GetWallKey(pos, direction), out wall);
+    }
+
+    private static long GetWallKey(Vector3Int pos, WallNormalDirection direction)
+    {
+        unchecked
+        {
+            long x = (uint)pos.x;
+            long y = (uint)pos.y;
+            long z = (uint)pos.z;
+            return (x << 34) ^ (y << 18) ^ (z << 2) ^ (long)direction;
+        }
+    }
+
     private void HandleWallDestroyed(Wall wall, Vector3Int wallPos, WallNormalDirection direction)
     {
         WallAboutToBeDestroyed?.Invoke(wall);
         wallBoxes.Remove(wall);
+        wallsByKey.Remove(GetWallKey(wallPos, direction));
 
         GetAdjacentBoxPositions(wallPos, direction, out Vector3Int firstBoxPos, out Vector3Int secondBoxPos);
 

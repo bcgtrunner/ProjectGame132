@@ -10,6 +10,9 @@ public class Wall : MonoBehaviour
     public float MaxHealth = 5;
     public float Health { get; private set; }
 
+    public Vector3Int GridPos;
+    public WallNormalDirection Direction;
+
     public Action Destroyed;
 
     private Color _initialColor;

@@ -78,17 +78,17 @@ public class PaintShooter : MonoBehaviour
                         ? paintRenderer.sharedMaterial.GetColor("_BaseColor")
                         : Color.red;
 
+                    float areaDamage = WallDamage * scale * scale;
                     if (IsLocalNetworkedPlayer(out var localNetForPaint))
                     {
                         localNetForPaint.RequestSpawnPaintServerRpc(bestContact.point, bestContact.normal, scale, paintColor);
+                        localNetForPaint.RequestDamageWallServerRpc(hitWall.GridPos, (int)hitWall.Direction, areaDamage);
                     }
                     else
                     {
                         SpawnPaintAt(bestContact.point, bestContact.normal, scale, paintColor);
+                        hitWall.Damage(areaDamage);
                     }
-
-                    float areaDamage = WallDamage * scale * scale;
-                    hitWall.Damage(areaDamage);
                 };
             }
         }
