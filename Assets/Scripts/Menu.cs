@@ -24,8 +24,8 @@ public class Menu : MonoBehaviour
     [SerializeField] private TMP_InputField ipInput;
     [SerializeField] private TMP_Text ipText;
 
-    private List<string> ips;
-    [SerializeField] private List<Button> connectButtons;
+    private List<string> ips = new();
+    [SerializeField] private List<GameObject> connectButtons;
 
     private void Awake()
     {
@@ -49,14 +49,30 @@ public class Menu : MonoBehaviour
         connectButton.onClick.AddListener(StartClient);
         ipInput.onValueChanged.AddListener(ip => { if (NetUtils.IsIPCorrect(ip)) HostAddress = ip; });
         ipText.text = string.Join(' ', NetUtils.GetLocalIPAddress());
+        InvokeRepeating("UpdateIPs", 0f, 0.5f);
+    }
+
+    void UpdateIPs()
+    {
+        for (int i = 0; i < ips.Count; i++)
+        {
+            var button = connectButtons[i];
+            if (i >= 5 || button.activeSelf) continue;
+            button.SetActive(true);
+            string ip = ips[i];
+            button.GetComponentInChildren<TMP_Text>().text = "Connect to " + ip;
+            Debug.Log(i);
+            button.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                HostAddress = ip;
+                StartClient();
+            });
+        }
     }
 
     public void OnIPReceived(string ip)
     {
-        if (ips.Contains(ip) || ips.Count == 6) return;
-        Button newButton = connectButtons[ips.Count];
-        newButton.gameObject.SetActive(true);
-        newButton.GetComponent<TMP_Text>().text = $"Connect to {ip}";
+        if (ips.Contains(ip) || ips.Count >= 6) return;
         ips.Add(ip);
     }
 
