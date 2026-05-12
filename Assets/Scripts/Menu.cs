@@ -1,19 +1,31 @@
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Net;
+using TMPro;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class Menu : MonoBehaviour
 {
     private const string MultiplayerSceneName = "Multiplayer";
-    private const string HostAddress = "192.168.0.104";
     private const ushort Port = 7777;
+
+    private string HostAddress = "192.168.0.104";
 
     [SerializeField] private Button playButton;
     [SerializeField] private Button quitButton;
     [SerializeField] private Button hostButton;
-    [SerializeField] private Button clientButton;
+    [SerializeField] private Button connectButton;
+    [SerializeField] private TMP_InputField ipInput;
+    [SerializeField] private TMP_Text ipText;
+
+    private List<string> ips;
+    [SerializeField] private List<Button> connectButtons;
 
     private void Awake()
     {
@@ -34,7 +46,18 @@ public class Menu : MonoBehaviour
         playButton.onClick.AddListener(() => SceneManager.LoadScene(1));
         quitButton.onClick.AddListener(Application.Quit);
         hostButton.onClick.AddListener(StartHost);
-        clientButton.onClick.AddListener(StartClient);
+        connectButton.onClick.AddListener(StartClient);
+        ipInput.onValueChanged.AddListener(ip => { if (NetUtils.IsIPCorrect(ip)) HostAddress = ip; });
+        ipText.text = string.Join(' ', NetUtils.GetLocalIPAddress());
+    }
+
+    public void OnIPReceived(string ip)
+    {
+        if (ips.Contains(ip) || ips.Count == 6) return;
+        Button newButton = connectButtons[ips.Count];
+        newButton.gameObject.SetActive(true);
+        newButton.GetComponent<TMP_Text>().text = $"Connect to {ip}";
+        ips.Add(ip);
     }
 
     private void StartHost()
@@ -64,6 +87,4 @@ public class Menu : MonoBehaviour
         transport.ConnectionData.Port = Port;
         return true;
     }
-
-    
 }
