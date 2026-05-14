@@ -8,6 +8,7 @@ public class Paint : MonoBehaviour
 
     public void AttachTo(Wall wall)
     {
+        if (wall == null) Destroy(gameObject);
         attachedWall = wall;
         wall.Destroyed += Destroy;
     }
