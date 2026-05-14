@@ -81,8 +81,7 @@ public class PaintShooter : MonoBehaviour
                     float areaDamage = WallDamage * scale * scale;
                     if (IsLocalNetworkedPlayer(out var localNetForPaint))
                     {
-                        localNetForPaint.RequestSpawnPaintServerRpc(bestContact.point, bestContact.normal, scale, paintColor);
-                        localNetForPaint.RequestDamageWallServerRpc(hitWall.GridPos, (int)hitWall.Direction, areaDamage);
+                        localNetForPaint.RequestSpawnPaintAndDamageWallServerRpc(bestContact.point, bestContact.normal, scale, paintColor, hitWall.GridPos, (int)hitWall.Direction, areaDamage);
                     }
                     else
                     {
