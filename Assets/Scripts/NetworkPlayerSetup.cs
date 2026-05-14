@@ -120,24 +120,31 @@ public class NetworkPlayerSetup : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Single combined RPC to spawn paint then damage a wall (in that order).
+    /// This prevents a race condition where two separate RPCs could arrive out of order,
+    /// causing paint to be spawned after the wall is already destroyed (orphaned paint).
+    /// </summary>
     [ServerRpc(RequireOwnership = false)]
-    public void RequestSpawnPaintServerRpc(Vector3 point, Vector3 normal, float scale, Color color)
+    public void RequestSpawnPaintAndDamageWallServerRpc(Vector3 point, Vector3 normal, float scale, Color color, Vector3Int wallPos, int direction, float amount)
     {
-        SpawnPaintClientRpc(point, normal, scale, color);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void RequestDamageWallServerRpc(Vector3Int wallPos, int direction, float amount)
-    {
-        DamageWallClientRpc(wallPos, direction, amount);
+        SpawnPaintAndDamageWallClientRpc(point, normal, scale, color, wallPos, direction, amount);
     }
 
     [ClientRpc]
-    private void DamageWallClientRpc(Vector3Int wallPos, int direction, float amount)
+    private void SpawnPaintAndDamageWallClientRpc(Vector3 point, Vector3 normal, float scale, Color color, Vector3Int wallPos, int direction, float amount)
     {
-        if (WorldGenerator.Instance == null) return;
-        if (WorldGenerator.Instance.TryGetWall(wallPos, (WallNormalDirection)direction, out var wall) && wall != null)
-            wall.Damage(amount);
+        var nm = NetworkManager.Singleton;
+        var local = nm != null ? nm.LocalClient?.PlayerObject : null;
+        if (local != null && local.TryGetComponent<PaintShooter>(out var shooter))
+        {
+            // Spawn paint FIRST so it can attach to the wall via AttachTo()
+            shooter.SpawnPaintAt(point, normal, scale, color);
+
+            // Then damage the wall (may destroy it, triggering paint cleanup through Destroyed event)
+            if (WorldGenerator.Instance != null && WorldGenerator.Instance.TryGetWall(wallPos, (WallNormalDirection)direction, out var wall) && wall != null)
+                wall.Damage(amount);
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -167,15 +174,6 @@ public class NetworkPlayerSetup : NetworkBehaviour
         var local = nm != null ? nm.LocalClient?.PlayerObject : null;
         if (local != null && local.TryGetComponent<PaintShooter>(out var shooter))
             shooter.SpawnVisualBullet(point, dir, scale, speed);
-    }
-
-    [ClientRpc]
-    private void SpawnPaintClientRpc(Vector3 point, Vector3 normal, float scale, Color color)
-    {
-        var nm = NetworkManager.Singleton;
-        var local = nm != null ? nm.LocalClient?.PlayerObject : null;
-        if (local != null && local.TryGetComponent<PaintShooter>(out var shooter))
-            shooter.SpawnPaintAt(point, normal, scale, color);
     }
 
     public static Vector3 GetSpawnOffset(ulong clientId)
