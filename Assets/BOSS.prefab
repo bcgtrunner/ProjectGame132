@@ -210,7 +210,7 @@ MonoBehaviour:
   WallDamage: 1
   Paint: {fileID: 141112844746228153, guid: b29657ad1b7c1174b8c6dc53acac6393, type: 3}
   Bullet: {fileID: 7538472990877056731, guid: e87b13b2a46ec8341a0201f388617c8e, type: 3}
-  _shotsPerSound: 6
+  _shotsPerSound: 3
 --- !u!114 &3399716694662832702
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246,13 +246,13 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: 3eabf280e06495d4c94f87a0e35e78f1, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 0.498
+  m_Volume: 1
   m_Pitch: 1
   Loop: 0
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
-  Priority: 130
+  Priority: 0
   DopplerLevel: 1
   MinDistance: 1
   MaxDistance: 94.9
@@ -290,7 +290,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0.903
+      value: 0.706
       inSlope: 0
       outSlope: 0
       tangentMode: 0

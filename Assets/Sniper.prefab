@@ -209,6 +209,7 @@ MonoBehaviour:
   WallDamage: 1
   Paint: {fileID: 141112844746228153, guid: b29657ad1b7c1174b8c6dc53acac6393, type: 3}
   Bullet: {fileID: 7538472990877056731, guid: e87b13b2a46ec8341a0201f388617c8e, type: 3}
+  _shotsPerSound: 1
 --- !u!82 &-2856579654511179569
 AudioSource:
   m_ObjectHideFlags: 0
@@ -228,7 +229,7 @@ AudioSource:
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
-  Priority: 128
+  Priority: 2
   DopplerLevel: 1
   MinDistance: 1
   MaxDistance: 94.9

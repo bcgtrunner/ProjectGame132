@@ -18,6 +18,8 @@ public class PlayerController : MonoBehaviour
     private enum PlayerState { Attached, Flying }
 
     private Collider _playerCollider;
+    private MeshRenderer _meshRenderer;
+    private bool _meshRendererWasEnabled;
     private bool _isPlayerControlled;
     private PlayerState _state = PlayerState.Attached;
     private bool _hasSurfaceNormal;
@@ -108,6 +110,11 @@ public class PlayerController : MonoBehaviour
         UnsubscribeFromWall();
         _attachedWallCollider = null;
         if (_playerCollider != null) _playerCollider.enabled = false;
+        if (_meshRenderer != null)
+        {
+            _meshRendererWasEnabled = _meshRenderer.enabled;
+            _meshRenderer.enabled = false;
+        }
         if (TryGetComponent<PlayerInput>(out var pi)) pi.enabled = false;
         Cursor.lockState = CursorLockMode.Confined;
         Cursor.visible = true;
@@ -122,6 +129,7 @@ public class PlayerController : MonoBehaviour
         transform.position = (Vector3)spawnBox * WorldGenerator.Scale;
 
         if (_playerCollider != null) _playerCollider.enabled = true;
+        if (_meshRenderer != null) _meshRenderer.enabled = _meshRendererWasEnabled;
         if (TryGetComponent<PlayerInput>(out var pi))
         {
             pi.enabled = true;
@@ -177,6 +185,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         _playerCollider = GetComponent<Collider>();
+        _meshRenderer = GetComponent<MeshRenderer>();
         _isPlayerControlled = TryGetComponent<PlayerInput>(out _);
         _takeoffCooldown = new Cooldown(_takeoffCooldownDuration);
         _damageFlash = new Cooldown(_hpFlashDuration);
