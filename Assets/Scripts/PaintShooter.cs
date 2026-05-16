@@ -45,7 +45,8 @@ public class PaintShooter : MonoBehaviour
                 bullet.Expand(scale);
                 bullet.Launch(dir, BulletSpeed);
                 _shotsSinceLastSound++;
-                if (_shootAudio != null && _shotsSinceLastSound >= Mathf.Max(1, _shotsPerSound))
+                if (_shootAudio != null && _shootAudio.isActiveAndEnabled
+                    && _shotsSinceLastSound >= Mathf.Max(1, _shotsPerSound))
                 {
                     _shotsSinceLastSound = 0;
                     //_shootAudio.volume = 0.2f + 0.2f * scale;
