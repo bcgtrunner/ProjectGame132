@@ -82,6 +82,12 @@ public class PlayerInput : MonoBehaviour
             _controller.TryLaunch(direction);
         }
 
+        // Auto-launch idle players the moment spawn immunity expires
+        if (!_controller.HasEverLaunched && !_controller.IsImmune && _controller.IsAttached)
+        {
+            _controller.TryLaunch(direction);
+        }
+
         // Scroll wheel = queue shots
         if (_actions.UI.ScrollWheel.ReadValue<Vector2>() != Vector2.zero)
         {
