@@ -9,12 +9,37 @@ public class MultiplayerStartup : MonoBehaviour
         if (NetworkManager.Singleton == null) return;
         if (NetworkManager.Singleton.IsServer)
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
     }
 
     private void OnDestroy()
     {
         if (NetworkManager.Singleton != null)
+        {
             NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+        }
+    }
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+
+        // Only react when we (the local client) get disconnected — e.g., host shut down the session.
+        if (nm.IsServer) return;
+        if (clientId != nm.LocalClientId) return;
+
+        ReturnToMenu();
+    }
+
+    private static void ReturnToMenu()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsListening) nm.Shutdown();
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = true;
+        SceneManager.LoadScene(0);
     }
 
     private void OnClientConnected(ulong clientId)
@@ -35,11 +60,7 @@ public class MultiplayerStartup : MonoBehaviour
     {
         if (InputManager.Instance.Actions.UI.Escape.WasPerformedThisFrame())
         {
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-                NetworkManager.Singleton.Shutdown();
-            Cursor.lockState = CursorLockMode.Confined;
-            Cursor.visible = true;
-            SceneManager.LoadScene(0);
+            ReturnToMenu();
         }
     }
 }
