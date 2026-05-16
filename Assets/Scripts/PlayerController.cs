@@ -21,6 +21,8 @@ public class PlayerController : MonoBehaviour
     private bool _isPlayerControlled;
     private PlayerState _state = PlayerState.Attached;
     private bool _hasSurfaceNormal;
+    private bool _hasEverLaunched;
+    public bool HasEverLaunched => _hasEverLaunched;
     private Vector3 _flyingDirection;
     private Collider _attachedWallCollider;
     private Wall _attachedWall;
@@ -198,6 +200,7 @@ public class PlayerController : MonoBehaviour
         _hasSurfaceNormal = false;
         ResolveWallOverlaps();
         _state = PlayerState.Flying;
+        _hasEverLaunched = true;
     }
 
     public void SetVirtualAttachment(Vector3 surfaceNormal)
@@ -217,6 +220,7 @@ public class PlayerController : MonoBehaviour
         UnsubscribeFromWall();
         _attachedWallCollider = null;
         _hasSurfaceNormal = false;
+        _hasEverLaunched = false;
         CurrentSurfaceNormal = Vector3.up;
         _state = PlayerState.Attached;
         _spawnImmunity?.Reset();

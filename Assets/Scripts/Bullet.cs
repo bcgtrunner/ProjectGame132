@@ -33,7 +33,6 @@ public class Bullet : MonoBehaviour
     {
         float timeToExpand = 0.1f;
         float t = 0f;
-        Debug.Log(scale);
         Vector3 initialScale = transform.localScale;
         Vector3 targetScale = initialScale * scale;
 
