@@ -54,6 +54,13 @@ public class PlayerInput : MonoBehaviour
 
     private void Update()
     {
+        if (EscapeMenu.IsOpen)
+        {
+            _isCharging = false;
+            _queuedShots = 0;
+            return;
+        }
+
         Camera cam = GetCamera();
         Vector3 direction = cam != null ? cam.transform.forward : transform.forward;
         // Left click = charge shot (hold to ramp scale 2→4, release to fire)
