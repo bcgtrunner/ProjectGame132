@@ -85,6 +85,7 @@ public class CameraController : MonoBehaviour
     {
         if (_camera == null) return;
         if (EscapeMenu.IsOpen) return;
+        if (_playerController != null && _playerController.IsDead) return;
 
         float centerX = Screen.width / 2f;
         float centerY = Screen.height / 2f;
