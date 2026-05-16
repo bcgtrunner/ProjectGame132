@@ -17,18 +17,28 @@ public class AIInput : MonoBehaviour
     [SerializeField] private float _shrapnelScale = 0.3f;
 
     [Header("Movement & AI Behavior")]
-    [Tooltip("Насколько сильно бот хочет приблизиться к цели. Чем выше значение, тем приоритетнее для бота стены, находящиеся ближе к игроку.")]
+    [Tooltip("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ. пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.")]
     [SerializeField] private float _followStrength = 1.0f;
-    [Tooltip("Максимальная дистанция, на которую бот может переместиться за один прыжок.")]
+    [Tooltip("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.")]
     [SerializeField] private float _maxTravelDistance = 10f;
-    [Tooltip("Минимальное количество HP стены, на которую бот согласится прыгнуть.")]
+    [Tooltip("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ HP пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.")]
     [SerializeField] private float _minWallHpThreshold = 2.0f;
 
     private PlayerController _controller;
     private PaintShooter _shooter;
     private bool isLaunching = false;
     private bool isShooting = false;
-    public PlayerController Target { get; set; }
+    private PlayerController _target;
+    public PlayerController Target
+    {
+        get
+        {
+            if (_target == null && GameManager.Instance != null)
+                return GameManager.Instance.Player;
+            return _target;
+        }
+        set => _target = value;
+    }
     public event System.Action<AIInput> Destroyed;
 
     private void Awake()
@@ -43,7 +53,7 @@ public class AIInput : MonoBehaviour
     {
         while (true)
         {
-            Vector3? normal = _controller.IsAttached ? _controller.CurrentSurfaceNormal : (Vector3?)null;
+            Vector3? normal = _controller.HasSurfaceNormal ? _controller.CurrentSurfaceNormal : (Vector3?)null;
             _shooter.ShootDeathBurst(_shrapnelShotsPerFrame, _shrapnelScale, normal);
             yield return null;
         }
@@ -146,17 +156,17 @@ public class AIInput : MonoBehaviour
         {
             Vector3 dir = Random.onUnitSphere;
 
-            // Используем настраиваемую переменную _maxTravelDistance вместо 10f
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ _maxTravelDistance пїЅпїЅпїЅпїЅпїЅпїЅ 10f
             if (Physics.Raycast(transform.position, dir, out RaycastHit hit, _maxTravelDistance))
             {
-                // Проверка: не перемещаться на стену с низким HP
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ HP
                 Wall wall = hit.collider.GetComponent<Wall>();
                 if (wall != null)
                 {
-                    // ВАЖНО: Замените .CurrentHp на актуальное свойство здоровья в вашем скрипте Wall
+                    // пїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ .CurrentHp пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ Wall
                     if (wall.Health < _minWallHpThreshold)
                     {
-                        continue; // Игнорируем эту стену, если у неё мало здоровья
+                        continue; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                     }
                 }
 
@@ -164,7 +174,7 @@ public class AIInput : MonoBehaviour
                 if (Target != null)
                 {
                     float dist = Vector3.Distance(hit.point, Target.transform.position);
-                    // Умножаем дистанцию на силу следования
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                     score -= dist * _followStrength;
                 }
 

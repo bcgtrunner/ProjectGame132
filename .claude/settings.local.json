@@ -4,7 +4,8 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(xargs grep -A 5 \"executionOrder\\\\|ScriptExecutionOrder\")",
-      "Bash(grep -v \"^\\\\-\\\\-$\\\\|SerializeField\")"
+      "Bash(grep -v \"^\\\\-\\\\-$\\\\|SerializeField\")",
+      "Bash(xargs grep -l \"b29657ad1b7c1174b8c6dc53acac6393\\\\|e87b13b2a46ec8341a0201f388617c8e\")"
     ]
   }
 }

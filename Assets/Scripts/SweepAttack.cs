@@ -63,7 +63,7 @@ public class SweepAttack : MonoBehaviour
         PlayerController target = _aiInput != null ? _aiInput.Target : null;
         if (target != null)
             hemisphere = (target.transform.position - transform.position).normalized;
-        else if (_controller != null && _controller.IsAttached)
+        else if (_controller != null && _controller.HasSurfaceNormal)
             hemisphere = _controller.CurrentSurfaceNormal;
 
         _shooter.ShootDeathBurst(_shrapnelShotsPerFrame, _shrapnelScale, hemisphere);

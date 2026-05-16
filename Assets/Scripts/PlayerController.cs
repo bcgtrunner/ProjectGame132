@@ -37,6 +37,7 @@ public class PlayerController : MonoBehaviour
     public Cooldown DamageFlash => _damageFlash;
     public Cooldown HealFlash => _healFlash;
     public bool IsAttached => _state == PlayerState.Attached;
+    public bool HasSurfaceNormal => _hasSurfaceNormal;
     public bool IsAlive => _currentHp > 0f;
     public float CurrentHp => _currentHp;
     public float MaxHp => _maxHp;
