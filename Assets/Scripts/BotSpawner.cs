@@ -123,7 +123,8 @@ public class BotSpawner : MonoBehaviour
                 Destroy(_bots[i].gameObject);
         }
 
-        if (_botTarget != null && _botTarget.AttachedWallCollider == wallCollider)
+        if (_botTarget != null && _botTarget.AttachedWallCollider == wallCollider
+            && !_botTarget.LaunchOnWallDestroyed && !_botTarget.IsImmune)
             Destroy(_botTarget.gameObject);
     }
 
