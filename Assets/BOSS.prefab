@@ -133,11 +133,12 @@ MonoBehaviour:
   _flySpeed: 10
   _launchClearance: 0.02
   _collisionSkin: 0.02
-  _maxHp: 350
+  _maxHp: 100
   _healRate: 0.1
   _launchOnWallDestroyed: 1
   _takeoffCooldownDuration: 0.35
   _hpFlashDuration: 0.4
+  _spawnImmunityDuration: 5
 --- !u!114 &109459262745567538
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -38,7 +38,7 @@ public class PaintShooter : MonoBehaviour
                 spawnOffset = Mathf.Max(spawnOffset, 2f);
                 Vector3 spawnPos = transform.position + dir * spawnOffset;
                 var bullet = Instantiate(Bullet, spawnPos, Quaternion.identity);
-                bullet.transform.localScale *= scale;
+                bullet.Expand(scale);
                 bullet.Launch(dir, BulletSpeed);
 
                 if (IsLocalNetworkedPlayer(out var localNet))
@@ -117,19 +117,21 @@ public class PaintShooter : MonoBehaviour
         return localPlayer.TryGetComponent(out localNet);
     }
 
-    public void SpawnPaintAt(Vector3 point, Vector3 normal, float scale, Color color)
+    public Paint SpawnPaintAt(Vector3 point, Vector3 normal, float scale, Color color)
     {
-        if (Paint == null) return;
-
         var paint = Instantiate(Paint, point, Quaternion.LookRotation(normal) * Quaternion.LookRotation(Vector3.up));
         paint.transform.localScale *= scale;
-
         Wall wall = FindWallAt(point, normal);
         if (wall != null)
         {
             paint.AttachTo(wall);
             wall.SetDamageColor(color);
         }
+        else
+        {
+            Destroy(paint.gameObject);
+        }
+        return paint;
     }
 
     private static Wall FindWallAt(Vector3 point, Vector3 normal)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 public class Bullet : MonoBehaviour
@@ -21,6 +22,32 @@ public class Bullet : MonoBehaviour
         {
             rb.position += Speed * Direction * Time.fixedDeltaTime;
         }
+    }
+
+    public void Expand(float scale)
+    {
+        StartCoroutine(Expansion(scale));
+    }
+
+    private IEnumerator Expansion(float scale)
+    {
+        float timeToExpand = 0.1f;
+        float t = 0f;
+        Vector3 initialScale = transform.localScale;
+        Vector3 targetScale = initialScale * scale;
+
+        while (t < timeToExpand)
+        {
+            t += Time.deltaTime;
+
+            float progress = t / timeToExpand;
+
+            transform.localScale = Vector3.Lerp(initialScale, targetScale, progress);
+
+            yield return null;
+        }
+
+        transform.localScale = targetScale;
     }
 
     private void OnCollisionEnter(Collision collision)
