@@ -65,6 +65,7 @@ public class PlayerController : MonoBehaviour
         else if (hp > _currentHp) _healFlash.Reset();
         _currentHp = hp;
         _previousHp = hp;
+        if (_meshRenderer != null) _meshRenderer.enabled = hp > 0f;
     }
 
     public void TakeDamage(float amount)
