@@ -5,13 +5,14 @@ public class Paint : MonoBehaviour
 {
     private Wall attachedWall;
     private readonly HashSet<PlayerController> _touching = new();
+    [SerializeField] private Collider _collider;
 
     public void AttachTo(Wall wall)
     {
         if (wall == null) Destroy(gameObject);
         attachedWall = wall;
         transform.SetParent(wall.transform);
-        wall.Destroyed += Destroy;
+        attachedWall.Destroyed += () => _collider.enabled = false;
     }
 
     private void OnTriggerEnter(Collider other)
