@@ -100,9 +100,13 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] private float _takeoffCooldownDuration = 0.35f;
     [SerializeField] private float _hpFlashDuration = 0.4f;
+    [SerializeField] private float _spawnImmunityDuration = 5f;
     private Cooldown _takeoffCooldown;
     private Cooldown _damageFlash;
     private Cooldown _healFlash;
+    private Cooldown _spawnImmunity;
+
+    public bool IsImmune => _spawnImmunity != null && !_spawnImmunity.Over();
 
     private void Awake()
     {
@@ -111,6 +115,7 @@ public class PlayerController : MonoBehaviour
         _takeoffCooldown = new Cooldown(_takeoffCooldownDuration);
         _damageFlash = new Cooldown(_hpFlashDuration);
         _healFlash = new Cooldown(_hpFlashDuration);
+        _spawnImmunity = new Cooldown(_spawnImmunityDuration);
         _currentHp = _maxHp;
         _previousHp = _maxHp;
     }
@@ -145,7 +150,7 @@ public class PlayerController : MonoBehaviour
             UpdateFlying();
         }
 
-        if (IsTouchingPaint)
+        if (IsTouchingPaint && !IsImmune)
         {
             TakeDamage(Time.deltaTime);
         }
@@ -159,11 +164,12 @@ public class PlayerController : MonoBehaviour
     {
         _attachedWall = null;
         _attachedWallCollider = null;
-        if (_launchOnWallDestroyed)
+        if (_launchOnWallDestroyed || IsImmune)
         {
             _flyingDirection = CurrentSurfaceNormal.sqrMagnitude > Mathf.Epsilon
                 ? CurrentSurfaceNormal.normalized
                 : UnityEngine.Random.onUnitSphere;
+            _hasSurfaceNormal = false;
             _state = PlayerState.Flying;
         }
         else
@@ -211,6 +217,7 @@ public class PlayerController : MonoBehaviour
         _hasSurfaceNormal = false;
         CurrentSurfaceNormal = Vector3.up;
         _state = PlayerState.Attached;
+        _spawnImmunity?.Reset();
         AttachedToWall?.Invoke(Vector3.up, transform.rotation);
     }
 
