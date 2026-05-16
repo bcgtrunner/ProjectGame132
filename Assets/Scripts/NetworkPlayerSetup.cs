@@ -188,7 +188,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
 
             // Then damage the wall (may destroy it, triggering paint cleanup through Destroyed event)
             if (WorldGenerator.Instance != null && WorldGenerator.Instance.TryGetWall(wallPos, (WallNormalDirection)direction, out var wall) && wall != null)
-                wall.Damage(amount);
+                wall.DamageAt(point, amount);
         }
     }
 
