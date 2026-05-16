@@ -66,7 +66,7 @@ public class PlayerController : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
-        if (IsImmune) return;
+        if (IsImmune || _isDead) return;
 
         if (TryGetComponent<NetworkPlayerSetup>(out var net) && net.IsSpawned && !net.IsOwner)
         {
@@ -84,13 +84,69 @@ public class PlayerController : MonoBehaviour
         {
             if (_isPlayerControlled)
             {
-                GameManager.Instance.Restart();
+                var nm = Unity.Netcode.NetworkManager.Singleton;
+                if (nm != null && nm.IsListening)
+                    BeginRespawn();
+                else
+                    GameManager.Instance.Restart();
             }
             else
             {
                 Destroy(gameObject);
             }
         }
+    }
+
+    private void BeginRespawn()
+    {
+        _isDead = true;
+        _respawnAt = Time.time + _respawnDelay;
+        _currentHp = 0f;
+        _state = PlayerState.Attached;
+        _hasSurfaceNormal = false;
+        UnsubscribeFromWall();
+        _attachedWallCollider = null;
+        if (_playerCollider != null) _playerCollider.enabled = false;
+        if (TryGetComponent<PlayerInput>(out var pi)) pi.enabled = false;
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = true;
+    }
+
+    private void TryRespawn()
+    {
+        if (!_isDead || Time.time < _respawnAt) return;
+        _isDead = false;
+
+        Vector3Int spawnBox = PickRandomBox();
+        transform.position = (Vector3)spawnBox * WorldGenerator.Scale;
+
+        if (_playerCollider != null) _playerCollider.enabled = true;
+        if (TryGetComponent<PlayerInput>(out var pi))
+        {
+            pi.enabled = true;
+            pi.ResetState();
+        }
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        SetMaxHp(_maxHp);
+        SetFreeSpawnState();
+    }
+
+    private static Vector3Int PickRandomBox()
+    {
+        var wg = WorldGenerator.Instance;
+        if (wg == null) return Vector3Int.zero;
+        var positions = wg.BoxPositions;
+        if (positions == null || positions.Count == 0) return Vector3Int.zero;
+        int idx = UnityEngine.Random.Range(0, positions.Count);
+        int i = 0;
+        foreach (var p in positions)
+        {
+            if (i++ == idx) return p;
+        }
+        return Vector3Int.zero;
     }
 
     private void UnsubscribeFromWall()
@@ -105,12 +161,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _takeoffCooldownDuration = 0.35f;
     [SerializeField] private float _hpFlashDuration = 0.4f;
     [SerializeField] private float _spawnImmunityDuration = 5f;
+    [SerializeField] private float _respawnDelay = 5f;
     private Cooldown _takeoffCooldown;
     private Cooldown _damageFlash;
     private Cooldown _healFlash;
     private Cooldown _spawnImmunity;
+    private bool _isDead;
+    private float _respawnAt;
 
     public bool IsImmune => _spawnImmunity != null && !_spawnImmunity.Over();
+    public bool IsDead => _isDead;
+    public float RespawnCountdown => Mathf.Max(0f, _respawnAt - Time.time);
 
     private void Awake()
     {
@@ -131,20 +192,62 @@ public class PlayerController : MonoBehaviour
 
     private void OnGUI()
     {
-        if (_isPlayerControlled)
-        {
-            float hpRatio = _currentHp / _maxHp;
-            float barHeight = 20f;
-            float barY = Screen.height - barHeight;
+        if (!_isPlayerControlled) return;
 
-            GUI.color = IsImmune ? Color.yellow : GetHpFlashColor(_damageFlash, _healFlash);
-            GUI.DrawTexture(new Rect(0, barY, Screen.width * hpRatio, barHeight), Texture2D.whiteTexture);
-            GUI.color = Color.white;
+        if (_isDead)
+        {
+            DrawRespawnMenu();
+            return;
+        }
+
+        float hpRatio = _currentHp / _maxHp;
+        float barHeight = 20f;
+        float barY = Screen.height - barHeight;
+
+        GUI.color = IsImmune ? Color.yellow : GetHpFlashColor(_damageFlash, _healFlash);
+        GUI.DrawTexture(new Rect(0, barY, Screen.width * hpRatio, barHeight), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+    }
+
+    private void DrawRespawnMenu()
+    {
+        float panelWidth = 320f;
+        float panelHeight = 160f;
+        float x = (Screen.width - panelWidth) * 0.5f;
+        float y = (Screen.height - panelHeight) * 0.5f;
+
+        GUI.color = new Color(0f, 0f, 0f, 0.6f);
+        GUI.DrawTexture(new Rect(x, y, panelWidth, panelHeight), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 28,
+            alignment = TextAnchor.MiddleCenter,
+            normal = { textColor = Color.white }
+        };
+        GUI.Label(new Rect(x, y + 20f, panelWidth, 40f), $"Respawning in {Mathf.CeilToInt(RespawnCountdown)}", labelStyle);
+
+        GUIStyle buttonStyle = new GUIStyle(GUI.skin.button)
+        {
+            fontSize = 20
+        };
+        if (GUI.Button(new Rect(x + 80f, y + 90f, panelWidth - 160f, 50f), "Exit", buttonStyle))
+        {
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm != null && nm.IsListening) nm.Shutdown();
+            GameManager.Instance.GoToMenu();
         }
     }
 
     private void Update()
     {
+        if (_isDead)
+        {
+            TryRespawn();
+            return;
+        }
+
         if (_currentHp < _previousHp) _damageFlash.Reset();
         else if (_currentHp > _previousHp) _healFlash.Reset();
         _previousHp = _currentHp;
