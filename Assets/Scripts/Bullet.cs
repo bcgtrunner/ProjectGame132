@@ -12,6 +12,22 @@ public class Bullet : MonoBehaviour
     public Action<Collision> OnHit;
     private bool _consumed;
 
+    public void ResetState()
+    {
+        StopAllCoroutines();
+        Direction = Vector3.zero;
+        Speed = 0f;
+        CurrentScale = 1f;
+        transform.localScale = Vector3.one;
+        _consumed = false;
+        OnHit = null;
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+    }
+
     public void Launch(Vector3 dir, float speed = 0f)
     {
         Direction = dir;
@@ -72,6 +88,12 @@ public class Bullet : MonoBehaviour
     {
         _consumed = true;
         OnHit?.Invoke(collision);
-        if (_consumed) Destroy(gameObject);
+        if (_consumed)
+        {
+            if (BulletPool.Instance != null)
+                BulletPool.Instance.Release(this);
+            else
+                Destroy(gameObject);
+        }
     }
 }

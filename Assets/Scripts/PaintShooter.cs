@@ -19,6 +19,14 @@ public class PaintShooter : MonoBehaviour
         _shootAudio = GetComponent<AudioSource>();
     }
 
+    private void Start()
+    {
+        if (BulletPool.Instance != null && Bullet != null)
+        {
+            BulletPool.Instance.SetPrefab(Bullet);
+        }
+    }
+
     public void TryShoot(Vector3 dir, float scale = 1f)
     {
         if (Paint == null || Bullet == null)
@@ -41,7 +49,9 @@ public class PaintShooter : MonoBehaviour
                     : 2f;
                 spawnOffset = Mathf.Max(spawnOffset, 2f);
                 Vector3 spawnPos = transform.position + dir * spawnOffset;
-                var bullet = Instantiate(Bullet, spawnPos, Quaternion.identity);
+                var bullet = BulletPool.Instance != null 
+                    ? BulletPool.Instance.Get(spawnPos, Quaternion.identity) 
+                    : Instantiate(Bullet, spawnPos, Quaternion.identity);
                 bullet.Expand(scale);
                 bullet.Launch(dir, BulletSpeed);
                 _shotsSinceLastSound++;
@@ -131,7 +141,9 @@ public class PaintShooter : MonoBehaviour
     public void SpawnVisualBullet(Vector3 point, Vector3 dir, float scale, float speed)
     {
         if (Bullet == null) return;
-        var bullet = Instantiate(Bullet, point, Quaternion.identity);
+        var bullet = BulletPool.Instance != null 
+            ? BulletPool.Instance.Get(point, Quaternion.identity) 
+            : Instantiate(Bullet, point, Quaternion.identity);
         bullet.transform.localScale *= scale;
         bullet.Launch(dir, speed);
     }
