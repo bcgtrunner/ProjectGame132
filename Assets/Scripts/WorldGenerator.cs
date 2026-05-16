@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum WallNormalDirection
@@ -54,6 +56,7 @@ public class WorldGenerator : MonoBehaviour
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
     public static WorldGenerator Instance;
+    [SerializeField] private AudioClip _wallSound;
 
     public void Awake()
     {
@@ -221,7 +224,16 @@ public class WorldGenerator : MonoBehaviour
         wall.GridPos = pos;
         wall.Direction = direction;
         wallsByKey[GetWallKey(pos, direction)] = wall;
-        wall.Destroyed += () => HandleWallDestroyed(wall, pos, direction);
+        var source = wall.AddComponent<AudioSource>();
+        source.volume = 1f;
+        source.spatialBlend = 0.5f;
+        source.pitch = UnityEngine.Random.Range(0.9f, 1.1f);
+        source.clip = _wallSound;
+        wall.Destroyed += () =>
+        {
+            HandleWallDestroyed(wall, pos, direction);
+            source.Play();
+        };
 
         Vector3 worldPos = pos;
         if (direction == WallNormalDirection.X)

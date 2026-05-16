@@ -42,8 +42,8 @@ public class PaintShooter : MonoBehaviour
                 var bullet = Instantiate(Bullet, spawnPos, Quaternion.identity);
                 bullet.Expand(scale);
                 bullet.Launch(dir, BulletSpeed);
-                //_shootAudio.volume = 0.2f + 0.2f * scale;
-                _shootAudio.pitch = Random.Range(0.95f - 0.1f * scale, 1.05f);
+                _shootAudio.volume = 0.2f + 0.2f * scale;
+                _shootAudio.pitch = Random.Range(0.9f - 0.1f, 1.1f);
                 _shootAudio.Play();
                 if (IsLocalNetworkedPlayer(out var localNet))
                 {
