@@ -49,7 +49,7 @@ public class PaintShooter : MonoBehaviour
                     && _shotsSinceLastSound >= Mathf.Max(1, _shotsPerSound))
                 {
                     _shotsSinceLastSound = 0;
-                    //_shootAudio.volume = 0.2f + 0.2f * scale;
+                    _shootAudio.volume = 0.2f + 0.2f * scale;
                     _shootAudio.pitch = Random.Range(0.95f - 0.1f * scale, 1.05f);
                     _shootAudio.Play();
                 }
@@ -66,10 +66,27 @@ public class PaintShooter : MonoBehaviour
                 bullet.OnHit += (collision) =>
                 {
                     var collisionObject = collision.collider.gameObject;
+                    float curScale = bullet.CurrentScale;
 
                     if (collisionObject.TryGetComponent<PlayerController>(out var player))
                     {
-                        player.TakeDamage(PlayerDamage * scale * scale);
+                        float damage = PlayerDamage * curScale * curScale;
+                        float hp = player.CurrentHp;
+                        if (hp > 0f && hp < damage)
+                        {
+                            player.TakeDamage(damage);
+                            float baseDmg = Mathf.Max(PlayerDamage, 0.0001f);
+                            float newScaleSq = curScale * curScale - hp / baseDmg;
+                            if (newScaleSq > 0f)
+                            {
+                                bullet.Resize(Mathf.Sqrt(newScaleSq));
+                                bullet.Pierce();
+                            }
+                        }
+                        else
+                        {
+                            player.TakeDamage(damage);
+                        }
                     }
 
                     if (!collisionObject.TryGetComponent<Wall>(out var hitWall))
@@ -96,14 +113,14 @@ public class PaintShooter : MonoBehaviour
                         ? paintRenderer.sharedMaterial.GetColor("_BaseColor")
                         : Color.red;
 
-                    float areaDamage = WallDamage * scale * scale;
+                    float areaDamage = WallDamage * curScale * curScale;
                     if (IsLocalNetworkedPlayer(out var localNetForPaint))
                     {
-                        localNetForPaint.RequestSpawnPaintAndDamageWallServerRpc(bestContact.point, bestContact.normal, scale, paintColor, hitWall.GridPos, (int)hitWall.Direction, areaDamage);
+                        localNetForPaint.RequestSpawnPaintAndDamageWallServerRpc(bestContact.point, bestContact.normal, curScale, paintColor, hitWall.GridPos, (int)hitWall.Direction, areaDamage);
                     }
                     else
                     {
-                        SpawnPaintAt(bestContact.point, bestContact.normal, scale, paintColor);
+                        SpawnPaintAt(bestContact.point, bestContact.normal, curScale, paintColor);
                         hitWall.DamageAt(bestContact.point, areaDamage);
                     }
                 };

@@ -7,8 +7,10 @@ public class Bullet : MonoBehaviour
     public Rigidbody rb;
     public float Speed;
     public Vector3 Direction = Vector3.zero;
+    public float CurrentScale { get; private set; } = 1f;
 
     public Action<Collision> OnHit;
+    private bool _consumed;
 
     public void Launch(Vector3 dir, float speed = 0f)
     {
@@ -26,6 +28,7 @@ public class Bullet : MonoBehaviour
 
     public void Expand(float scale)
     {
+        CurrentScale = scale;
         StartCoroutine(Expansion(scale));
     }
 
@@ -50,9 +53,24 @@ public class Bullet : MonoBehaviour
         transform.localScale = targetScale;
     }
 
+    public void Resize(float newScale)
+    {
+        if (newScale <= 0f || CurrentScale <= 0f) return;
+        StopAllCoroutines();
+        float ratio = newScale / CurrentScale;
+        transform.localScale *= ratio;
+        CurrentScale = newScale;
+    }
+
+    public void Pierce()
+    {
+        _consumed = false;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
+        _consumed = true;
         OnHit?.Invoke(collision);
-        Destroy(gameObject);
+        if (_consumed) Destroy(gameObject);
     }
 }
