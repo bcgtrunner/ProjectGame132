@@ -20,10 +20,19 @@ public class Wall : MonoBehaviour
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private MeshRenderer _renderer;
     private MaterialPropertyBlock _propertyBlock;
+    private bool _initialized;
+    private bool _healthOverride;
+    private float _pendingHealth;
 
     private void Start()
     {
-        Health = MaxHealth;
+        EnsureInitialized();
+    }
+
+    private void EnsureInitialized()
+    {
+        if (_initialized) return;
+        _initialized = true;
 
         _renderer = GetComponent<MeshRenderer>();
         _propertyBlock = new MaterialPropertyBlock();
@@ -36,10 +45,19 @@ public class Wall : MonoBehaviour
         {
             _initialColor = Color.white;
         }
+
+        Health = _healthOverride ? Mathf.Clamp(_pendingHealth, 0f, MaxHealth) : MaxHealth;
+        if (_healthOverride && Health <= 0f)
+        {
+            Destroy();
+            return;
+        }
+        UpdateColor();
     }
 
     public void Damage(float points)
     {
+        EnsureInitialized();
         if (Health <= 0) return;
         Health -= points;
         if (Health <= 0)
@@ -54,6 +72,23 @@ public class Wall : MonoBehaviour
     public void SetDamageColor(Color color)
     {
         _damageColor = color;
+    }
+
+    public void SetHealth(float value)
+    {
+        if (!_initialized)
+        {
+            _healthOverride = true;
+            _pendingHealth = value;
+            return;
+        }
+        Health = Mathf.Clamp(value, 0f, MaxHealth);
+        if (Health <= 0f)
+        {
+            Destroy();
+            return;
+        }
+        UpdateColor();
     }
 
     private void UpdateColor()

@@ -23,6 +23,12 @@ public class MultiplayerStartup : MonoBehaviour
         if (!nm.ConnectedClients.TryGetValue(clientId, out var client) || client.PlayerObject == null) return;
 
         client.PlayerObject.transform.position = NetworkPlayerSetup.GetSpawnOffset(clientId);
+
+        if (clientId == nm.LocalClientId) return;
+
+        var hostPlayer = nm.LocalClient?.PlayerObject;
+        if (hostPlayer != null && hostPlayer.TryGetComponent<NetworkPlayerSetup>(out var setup))
+            setup.SendWorldStateTo(clientId);
     }
 
     private void Update()
