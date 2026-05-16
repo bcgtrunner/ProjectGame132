@@ -38,7 +38,7 @@ public class PaintShooter : MonoBehaviour
                 spawnOffset = Mathf.Max(spawnOffset, 2f);
                 Vector3 spawnPos = transform.position + dir * spawnOffset;
                 var bullet = Instantiate(Bullet, spawnPos, Quaternion.identity);
-                bullet.transform.localScale *= scale;
+                bullet.Expand(scale);
                 bullet.Launch(dir, BulletSpeed);
 
                 if (IsLocalNetworkedPlayer(out var localNet))
