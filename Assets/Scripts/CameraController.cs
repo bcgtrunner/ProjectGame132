@@ -84,6 +84,7 @@ public class CameraController : MonoBehaviour
     private void OnGUI()
     {
         if (_camera == null) return;
+        if (EscapeMenu.IsOpen) return;
 
         float centerX = Screen.width / 2f;
         float centerY = Screen.height / 2f;

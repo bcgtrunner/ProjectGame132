@@ -27,9 +27,23 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
         else
             Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
+    {
+        // Bots fire their Destroyed event during scene unload, which AddScores them.
+        // Reset AFTER the new gameplay scene finishes loading so the score is actually 0.
+        if (scene.buildIndex >= 1) ResetRunState();
     }
 
     public void ResetRunState()
@@ -83,6 +97,7 @@ public class GameManager : MonoBehaviour
     private void OnGUI()
     {
         if (BotSpawner.Instance == null) return;
+        if (EscapeMenu.IsOpen) return;
         string scoreText = _score.ToString("F1");
         float textWidth = 200f;
         float textHeight = 30f;

@@ -194,6 +194,7 @@ public class PlayerController : MonoBehaviour
     private void OnGUI()
     {
         if (!_isPlayerControlled) return;
+        if (EscapeMenu.IsOpen) return;
 
         if (_isDead)
         {
