@@ -162,7 +162,7 @@ public class BotSpawner : MonoBehaviour
     {
         for (int frame = 0; frame < _deathBurstFrames; frame++)
         {
-            Vector3? surfaceNormal = player.IsAttached ? player.CurrentSurfaceNormal : (Vector3?)null;
+            Vector3? surfaceNormal = player.HasSurfaceNormal ? player.CurrentSurfaceNormal : (Vector3?)null;
             shooter.ShootDeathBurst(shotsPerFrame, scale, surfaceNormal);
             yield return null;
         }
