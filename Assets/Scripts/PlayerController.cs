@@ -19,6 +19,9 @@ public class PlayerController : MonoBehaviour
 
     private Collider _playerCollider;
     private MeshRenderer _meshRenderer;
+    private MaterialPropertyBlock _propertyBlock;
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private Color _initialColor = Color.white;
     private bool _meshRendererWasEnabled;
     private bool _isPlayerControlled;
     private PlayerState _state = PlayerState.Attached;
@@ -187,6 +190,19 @@ public class PlayerController : MonoBehaviour
     {
         _playerCollider = GetComponent<Collider>();
         _meshRenderer = GetComponent<MeshRenderer>();
+        _propertyBlock = new MaterialPropertyBlock();
+        if (_meshRenderer != null)
+        {
+            _meshRenderer.GetPropertyBlock(_propertyBlock);
+            if (_meshRenderer.sharedMaterial != null && _meshRenderer.sharedMaterial.HasProperty(BaseColorId))
+            {
+                _initialColor = _meshRenderer.sharedMaterial.GetColor(BaseColorId);
+            }
+            if (_propertyBlock.HasProperty(BaseColorId))
+            {
+                _initialColor = _propertyBlock.GetColor(BaseColorId);
+            }
+        }
         _isPlayerControlled = TryGetComponent<PlayerInput>(out _);
         _takeoffCooldown = new Cooldown(_takeoffCooldownDuration);
         _damageFlash = new Cooldown(_hpFlashDuration);
@@ -263,6 +279,8 @@ public class PlayerController : MonoBehaviour
         if (_currentHp < _previousHp) _damageFlash.Reset();
         else if (_currentHp > _previousHp) _healFlash.Reset();
         _previousHp = _currentHp;
+
+        UpdateColor();
 
         if (_state == PlayerState.Flying)
         {
@@ -594,6 +612,17 @@ public class PlayerController : MonoBehaviour
             Mathf.Max(halfExtents.x - amount, 0.001f),
             Mathf.Max(halfExtents.y - amount, 0.001f),
             Mathf.Max(halfExtents.z - amount, 0.001f));
+    }
+
+    private void UpdateColor()
+    {
+        if (_maxHp <= 0 || _meshRenderer == null) return;
+        
+        float t = 1f - Mathf.Clamp01(_currentHp / _maxHp);
+        Color currentColor = Color.Lerp(_initialColor, Color.blue, t);
+        
+        _propertyBlock.SetColor(BaseColorId, currentColor);
+        _meshRenderer.SetPropertyBlock(_propertyBlock);
     }
 
     public static Color GetHpFlashColor(Cooldown damageFlash, Cooldown healFlash)
