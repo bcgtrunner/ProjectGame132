@@ -155,7 +155,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
             local.transform.position = GetSpawnOffset(nm.LocalClientId);
             if (local.TryGetComponent<PlayerController>(out var pc))
             {
-                pc.SetVirtualAttachment(Vector3.up);
+                pc.SetFreeSpawnState();
                 pc.SetMaxHp(pc.MaxHp);
             }
             if (local.TryGetComponent<PlayerInput>(out var pi))
