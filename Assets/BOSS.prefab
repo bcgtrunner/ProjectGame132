@@ -210,6 +210,7 @@ MonoBehaviour:
   WallDamage: 1
   Paint: {fileID: 141112844746228153, guid: b29657ad1b7c1174b8c6dc53acac6393, type: 3}
   Bullet: {fileID: 7538472990877056731, guid: e87b13b2a46ec8341a0201f388617c8e, type: 3}
+  _shotsPerSound: 6
 --- !u!114 &3399716694662832702
 MonoBehaviour:
   m_ObjectHideFlags: 0
