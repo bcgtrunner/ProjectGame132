@@ -221,9 +221,11 @@ public class PlayerController : MonoBehaviour
         _attachedWallCollider = null;
         _hasSurfaceNormal = false;
         _hasEverLaunched = false;
+        _paintTouchCount = 0;
         CurrentSurfaceNormal = Vector3.up;
         _state = PlayerState.Attached;
         _spawnImmunity?.Reset();
+        _takeoffCooldown?.Reset();
         AttachedToWall?.Invoke(Vector3.up, transform.rotation);
     }
 

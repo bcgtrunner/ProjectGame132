@@ -31,9 +31,16 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-    public void Restart()
+    public void ResetRunState()
     {
         _score = 0;
+        _bossesDefeated = 0;
+        _roomsSinceLastBoss = 0;
+    }
+
+    public void Restart()
+    {
+        ResetRunState();
 
         var nm = Unity.Netcode.NetworkManager.Singleton;
         if (nm != null && nm.IsListening)

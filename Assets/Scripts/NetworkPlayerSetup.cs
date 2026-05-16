@@ -145,6 +145,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
     [ClientRpc]
     private void RegenerateClientRpc()
     {
+        if (GameManager.Instance != null)
+            GameManager.Instance.ResetRunState();
+
         if (WorldGenerator.Instance != null)
             WorldGenerator.Instance.Regenerate();
 
