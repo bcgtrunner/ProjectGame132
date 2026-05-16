@@ -444,6 +444,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 204562ad405c0924f80beedc386196b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _wallSound: {fileID: 8300000, guid: ef5196ed62ec77c49bb2f378b3fd25d0, type: 3}
 --- !u!1 &400100
 GameObject:
   m_ObjectHideFlags: 0
