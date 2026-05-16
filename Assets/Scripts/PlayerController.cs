@@ -215,6 +215,23 @@ public class PlayerController : MonoBehaviour
         AttachedToWall?.Invoke(CurrentSurfaceNormal, transform.rotation);
     }
 
+    private float _recoilFactor = 0.0025f;
+
+    public void ApplyRecoil(Vector3 bulletDirection, float bulletSpeed, float bulletScale)
+    {
+        if (_state != PlayerState.Flying) return;
+        if (_flyingDirection.sqrMagnitude < Mathf.Epsilon) return;
+
+        float energy = bulletSpeed * bulletScale * bulletScale * bulletScale * _recoilFactor;
+        Vector3 combined = _flyingDirection * _flySpeed + (-bulletDirection.normalized) * energy;
+        if (combined.sqrMagnitude < Mathf.Epsilon)
+        {
+            _flyingDirection = -bulletDirection.normalized;
+            return;
+        }
+        _flyingDirection = combined.normalized;
+    }
+
     public void SetFreeSpawnState()
     {
         UnsubscribeFromWall();

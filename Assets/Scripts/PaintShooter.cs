@@ -45,6 +45,12 @@ public class PaintShooter : MonoBehaviour
                 {
                     localNet.RequestSpawnBulletServerRpc(spawnPos, dir, scale, BulletSpeed);
                 }
+
+                if (TryGetComponent<PlayerController>(out var shooterController))
+                {
+                    float effectiveSpeed = BulletSpeed != 0f ? BulletSpeed : Bullet.Speed;
+                    shooterController.ApplyRecoil(dir, effectiveSpeed, scale);
+                }
                 bullet.OnHit += (collision) =>
                 {
                     var collisionObject = collision.collider.gameObject;
