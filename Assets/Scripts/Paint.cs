@@ -10,6 +10,7 @@ public class Paint : MonoBehaviour
     {
         if (wall == null) Destroy(gameObject);
         attachedWall = wall;
+        transform.SetParent(wall.transform);
         wall.Destroyed += Destroy;
     }
 
