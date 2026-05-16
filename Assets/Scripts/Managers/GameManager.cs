@@ -59,7 +59,7 @@ public class GameManager : MonoBehaviour
 
     public void GoToMenu()
     {
-        _score = 0;
+        ResetRunState();
         Cursor.lockState = CursorLockMode.Confined;
         Cursor.visible = true;
         SceneManager.LoadScene(0);
@@ -87,7 +87,7 @@ public class GameManager : MonoBehaviour
         float textWidth = 200f;
         float textHeight = 30f;
         float x = (Screen.width - textWidth) * 0.5f;
-        float y = 10f;
+        float y = 24f;
 
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
@@ -116,7 +116,7 @@ public class GameManager : MonoBehaviour
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = Color.white }
             };
-            GUI.Label(new Rect(6f, 22f, 160f, 24f), $"Bosses: {_bossesDefeated}", bossCountStyle);
+            GUI.Label(new Rect(6f, 24f, 160f, 24f), $"Bosses: {_bossesDefeated}", bossCountStyle);
         }
     }
 
@@ -166,13 +166,17 @@ public class GameManager : MonoBehaviour
 
     public AIInput GetBoss(Vector3Int pos)
     {
-        if (_roomsSinceLastBoss < 10)
+        bool firstBoss = _bossesDefeated == 0;
+        int gap = firstBoss ? 10 : 4;
+        if (_roomsSinceLastBoss < gap)
         {
             _roomsSinceLastBoss++;
             return null;
         }
 
-        float chance = (_roomsSinceLastBoss - 9) * 0.1f;
+        float chance = firstBoss
+            ? (_roomsSinceLastBoss - 9) * 0.1f
+            : (_roomsSinceLastBoss - 3) * 0.25f;
         if (Random.value >= chance)
         {
             _roomsSinceLastBoss++;

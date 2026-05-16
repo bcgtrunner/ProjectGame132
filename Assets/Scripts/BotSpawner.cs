@@ -53,7 +53,7 @@ public class BotSpawner : MonoBehaviour
     private static float GetBossDifficulty()
     {
         int defeated = GameManager.Instance != null ? GameManager.Instance.BossesDefeated : 0;
-        return 0.35f + 0.3f * defeated;
+        return 0.35f + 0.45f * defeated;
     }
 
     public void ResetState()
