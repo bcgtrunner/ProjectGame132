@@ -9,10 +9,12 @@ public class PaintShooter : MonoBehaviour
     public Bullet Bullet;
 
     private Collider _collider;
+    private AudioSource _shootAudio;
 
     private void Awake()
     {
         _collider = GetComponent<Collider>();
+        _shootAudio = GetComponent<AudioSource>();
     }
 
     public void TryShoot(Vector3 dir, float scale = 1f)
@@ -40,7 +42,9 @@ public class PaintShooter : MonoBehaviour
                 var bullet = Instantiate(Bullet, spawnPos, Quaternion.identity);
                 bullet.Expand(scale);
                 bullet.Launch(dir, BulletSpeed);
-
+                //_shootAudio.volume = 0.2f + 0.2f * scale;
+                _shootAudio.pitch = Random.Range(0.95f - 0.1f * scale, 1.05f);
+                _shootAudio.Play();
                 if (IsLocalNetworkedPlayer(out var localNet))
                 {
                     localNet.RequestSpawnBulletServerRpc(spawnPos, dir, scale, BulletSpeed);
