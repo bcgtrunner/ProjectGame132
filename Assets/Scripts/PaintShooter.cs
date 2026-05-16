@@ -86,7 +86,7 @@ public class PaintShooter : MonoBehaviour
                     else
                     {
                         SpawnPaintAt(bestContact.point, bestContact.normal, scale, paintColor);
-                        hitWall.Damage(areaDamage);
+                        hitWall.DamageAt(bestContact.point, areaDamage);
                     }
                 };
             }
