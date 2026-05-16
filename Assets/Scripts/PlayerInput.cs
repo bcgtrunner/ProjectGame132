@@ -43,16 +43,7 @@ public class PlayerInput : MonoBehaviour
 
     private void Start()
     {
-        _controller.SetVirtualAttachment(Vector3.up);
-
-        // In networked play the camera hasn't oriented to the player's look direction yet,
-        // so skip the auto-launch and let the player right-click when ready.
-        if (!TryGetComponent<NetworkObject>(out _))
-        {
-            Camera cam = GetCamera();
-            Vector3 launchDirection = cam != null ? cam.transform.forward : transform.forward;
-            _controller.TryLaunch(launchDirection);
-        }
+        _controller.SetFreeSpawnState();
     }
 
     private Camera GetCamera()
