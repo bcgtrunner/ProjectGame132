@@ -10,11 +10,13 @@ public class NetworkPlayerSetup : NetworkBehaviour
         NetworkVariableWritePermission.Owner);
 
     private PlayerController _controller;
+    private MeshRenderer _meshRenderer;
     private float _lastSentHp;
 
     private void Awake()
     {
         _controller = GetComponent<PlayerController>();
+        _meshRenderer = GetComponent<MeshRenderer>();
     }
 
     public override void OnNetworkSpawn()
@@ -26,6 +28,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         if (!IsOwner)
         {
             controller.SetRemoteHp(SyncedHp.Value);
+            ApplyDeadVisibility(SyncedHp.Value);
         }
 
         if (!IsOwner)
@@ -58,6 +61,12 @@ public class NetworkPlayerSetup : NetworkBehaviour
     {
         if (IsOwner || _controller == null) return;
         _controller.SetRemoteHp(current);
+        ApplyDeadVisibility(current);
+    }
+
+    private void ApplyDeadVisibility(float hp)
+    {
+        if (_meshRenderer != null) _meshRenderer.enabled = hp > 0f;
     }
 
     private void Update()
