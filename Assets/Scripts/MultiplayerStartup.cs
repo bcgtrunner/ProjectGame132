@@ -56,11 +56,4 @@ public class MultiplayerStartup : MonoBehaviour
             setup.SendWorldStateTo(clientId);
     }
 
-    private void Update()
-    {
-        if (InputManager.Instance.Actions.UI.Escape.WasPerformedThisFrame())
-        {
-            ReturnToMenu();
-        }
-    }
 }

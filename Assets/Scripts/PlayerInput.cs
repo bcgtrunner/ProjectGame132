@@ -56,10 +56,6 @@ public class PlayerInput : MonoBehaviour
     {
         Camera cam = GetCamera();
         Vector3 direction = cam != null ? cam.transform.forward : transform.forward;
-        if (_actions.UI.Escape.WasPerformedThisFrame())
-        {
-            GameManager.Instance.GoToMenu();
-        }
         // Left click = charge shot (hold to ramp scale 2→4, release to fire)
         if (_actions.UI.Click.WasPressedThisFrame() && _clickCooldown.Over())
         {
