@@ -126,3 +126,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58650aae45c4fbe488f8da1abdfe64ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Paint
+  _collider: {fileID: 829980245070063776}

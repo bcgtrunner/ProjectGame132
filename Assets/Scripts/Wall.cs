@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -69,6 +70,20 @@ public class Wall : MonoBehaviour
         UpdateColor();
     }
 
+    public void DamageAt(Vector3 position, float points)
+    {
+        EnsureInitialized();
+        if (Health <= 0) return;
+        Health -= points;
+        if (Health <= 0)
+        {
+            Health = 0;
+            StartCoroutine(Collapse(position));
+        }
+
+        UpdateColor();
+    }
+
     public void SetDamageColor(Color color)
     {
         _damageColor = color;
@@ -105,6 +120,34 @@ public class Wall : MonoBehaviour
     private void Destroy()
     {
         Destroyed?.Invoke();
+        Destroy(gameObject);
+    }
+
+    private IEnumerator Collapse(Vector3 point)
+    {
+        float timeToCollapse = 0.2f;
+        float t = 0f;
+        GetComponent<Collider>().enabled = false;
+        Destroyed?.Invoke();
+        Vector3 initialScale = transform.localScale;
+        Vector3 initialPosition = transform.position;
+
+        while (t < timeToCollapse)
+        {
+            t += Time.deltaTime;
+
+            float progress = t / timeToCollapse;
+
+            transform.localScale = Vector3.Lerp(initialScale, Vector3.zero, progress);
+
+            transform.position = Vector3.Lerp(initialPosition, point, progress);
+
+            yield return null;
+        }
+
+        transform.localScale = Vector3.zero;
+        transform.position = point;
+
         Destroy(gameObject);
     }
 }
