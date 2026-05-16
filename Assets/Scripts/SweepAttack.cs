@@ -40,6 +40,16 @@ public class SweepAttack : MonoBehaviour
         _targetTimer = _targetChangeInterval;
     }
 
+    public void ApplyDifficulty(float multiplier)
+    {
+        if (multiplier <= 0f) return;
+        _activeDuration *= multiplier;
+        _idleDuration /= multiplier;
+        _sweepScale *= multiplier;
+        _shrapnelScale *= multiplier;
+        _modeTimer = _idleDuration;
+    }
+
     private void Update()
     {
         _modeTimer -= Time.deltaTime;

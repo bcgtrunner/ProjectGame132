@@ -16,6 +16,7 @@ public class GameManager : MonoBehaviour
 
     private float _score;
     private int _bossesDefeated;
+    public int BossesDefeated => _bossesDefeated;
 
     public PlayerController Player { get; set; }
 
