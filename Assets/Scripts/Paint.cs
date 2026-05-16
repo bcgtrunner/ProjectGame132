@@ -8,12 +8,42 @@ public class Paint : MonoBehaviour
     private readonly HashSet<PlayerController> _touching = new();
     [SerializeField] private Collider _collider;
 
+    public void ResetState()
+    {
+        transform.SetParent(null);
+        transform.localScale = Vector3.one;
+        _collider.enabled = true;
+        
+        foreach (var controller in _touching)
+        {
+            if (controller != null)
+                controller.OnPaintContact(false);
+        }
+        _touching.Clear();
+
+        if (attachedWall != null)
+        {
+            attachedWall.Destroyed -= HandleWallDestroyed;
+            attachedWall = null;
+        }
+    }
+
     public void AttachTo(Wall wall)
     {
-        if (wall == null) Destroy(gameObject);
+        if (wall == null)
+        {
+            ReleaseOrDestroy();
+            return;
+        }
         attachedWall = wall;
         transform.SetParent(wall.transform);
-        attachedWall.Destroyed += () => _collider.enabled = false;
+        attachedWall.Destroyed += HandleWallDestroyed;
+    }
+
+    private void HandleWallDestroyed()
+    {
+        _collider.enabled = false;
+        ReleaseOrDestroy();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -32,9 +62,16 @@ public class Paint : MonoBehaviour
         }
     }
 
-    private void Destroy()
+    public void ReleaseOrDestroy()
     {
-        Destroy(gameObject);
+        if (PaintPool.Instance != null && gameObject.activeSelf)
+        {
+            PaintPool.Instance.Release(this);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     private void OnDestroy()
@@ -47,6 +84,6 @@ public class Paint : MonoBehaviour
         _touching.Clear();
 
         if (attachedWall != null)
-            attachedWall.Destroyed -= Destroy;
+            attachedWall.Destroyed -= HandleWallDestroyed;
     }
 }

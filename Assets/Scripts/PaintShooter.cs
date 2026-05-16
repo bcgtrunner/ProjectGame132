@@ -25,6 +25,11 @@ public class PaintShooter : MonoBehaviour
         {
             BulletPool.Instance.SetPrefab(Bullet);
         }
+
+        if (PaintPool.Instance != null && Paint != null)
+        {
+            PaintPool.Instance.SetPrefab(Paint);
+        }
     }
 
     public void TryShoot(Vector3 dir, float scale = 1f)
@@ -160,7 +165,11 @@ public class PaintShooter : MonoBehaviour
 
     public Paint SpawnPaintAt(Vector3 point, Vector3 normal, float scale, Color color)
     {
-        var paint = Instantiate(Paint, point, Quaternion.LookRotation(normal) * Quaternion.LookRotation(Vector3.up));
+        var rot = Quaternion.LookRotation(normal) * Quaternion.LookRotation(Vector3.up);
+        var paint = PaintPool.Instance != null
+            ? PaintPool.Instance.Get(point, rot)
+            : Instantiate(Paint, point, rot);
+            
         paint.transform.localScale *= scale;
         Wall wall = FindWallAt(point, normal);
         if (wall != null)
@@ -170,7 +179,7 @@ public class PaintShooter : MonoBehaviour
         }
         else
         {
-            Destroy(paint.gameObject);
+            paint.ReleaseOrDestroy();
         }
         return paint;
     }
