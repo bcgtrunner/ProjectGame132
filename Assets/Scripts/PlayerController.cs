@@ -64,6 +64,8 @@ public class PlayerController : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
+        if (IsImmune) return;
+
         if (TryGetComponent<NetworkPlayerSetup>(out var net) && net.IsSpawned && !net.IsOwner)
         {
             var nm = Unity.Netcode.NetworkManager.Singleton;
@@ -133,7 +135,7 @@ public class PlayerController : MonoBehaviour
             float barHeight = 20f;
             float barY = Screen.height - barHeight;
 
-            GUI.color = GetHpFlashColor(_damageFlash, _healFlash);
+            GUI.color = IsImmune ? Color.yellow : GetHpFlashColor(_damageFlash, _healFlash);
             GUI.DrawTexture(new Rect(0, barY, Screen.width * hpRatio, barHeight), Texture2D.whiteTexture);
             GUI.color = Color.white;
         }
