@@ -76,6 +76,51 @@ public class NetworkPlayerSetup : NetworkBehaviour
         RegenerateClientRpc();
     }
 
+    public void SendWorldStateTo(ulong clientId)
+    {
+        if (WorldGenerator.Instance == null) return;
+        WorldGenerator.Instance.CaptureState(
+            out var boxPositions,
+            out var destroyedWallPositions,
+            out var destroyedWallDirections,
+            out var damagedWallPositions,
+            out var damagedWallDirections,
+            out var damagedWallHealth);
+
+        var rpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+        };
+        SyncWorldStateClientRpc(
+            boxPositions,
+            destroyedWallPositions,
+            destroyedWallDirections,
+            damagedWallPositions,
+            damagedWallDirections,
+            damagedWallHealth,
+            rpcParams);
+    }
+
+    [ClientRpc]
+    private void SyncWorldStateClientRpc(
+        Vector3Int[] boxPositions,
+        Vector3Int[] destroyedWallPositions,
+        int[] destroyedWallDirections,
+        Vector3Int[] damagedWallPositions,
+        int[] damagedWallDirections,
+        float[] damagedWallHealth,
+        ClientRpcParams rpcParams = default)
+    {
+        if (WorldGenerator.Instance == null) return;
+        WorldGenerator.Instance.ApplyServerWorldState(
+            boxPositions,
+            destroyedWallPositions,
+            destroyedWallDirections,
+            damagedWallPositions,
+            damagedWallDirections,
+            damagedWallHealth);
+    }
+
     [ServerRpc(RequireOwnership = false)]
     public void RequestDealDamageServerRpc(NetworkObjectReference targetRef, float amount)
     {

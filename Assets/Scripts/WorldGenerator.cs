@@ -44,6 +44,10 @@ public class WorldGenerator : MonoBehaviour
     private readonly Dictionary<Vector3Int, Box> boxes = new();
     private readonly Dictionary<Wall, WallBoxes> wallBoxes = new();
     private readonly Dictionary<long, Wall> wallsByKey = new();
+    private readonly HashSet<long> destroyedWallKeys = new();
+    private readonly List<(Vector3Int pos, WallNormalDirection dir)> destroyedWalls = new();
+
+    public IReadOnlyCollection<Vector3Int> BoxPositions => boxes.Keys;
 
     private Material _sharedWallMaterial;
     private Mesh _cachedCubeMesh;
@@ -78,6 +82,8 @@ public class WorldGenerator : MonoBehaviour
         boxes.Clear();
         wallBoxes.Clear();
         wallsByKey.Clear();
+        destroyedWallKeys.Clear();
+        destroyedWalls.Clear();
 
         if (BotSpawner.Instance != null)
             BotSpawner.Instance.ResetState();
@@ -267,6 +273,80 @@ public class WorldGenerator : MonoBehaviour
         return wallsByKey.TryGetValue(GetWallKey(pos, direction), out wall);
     }
 
+    public void CaptureState(
+        out Vector3Int[] boxPositions,
+        out Vector3Int[] destroyedWallPositions,
+        out int[] destroyedWallDirections,
+        out Vector3Int[] damagedWallPositions,
+        out int[] damagedWallDirections,
+        out float[] damagedWallHealth)
+    {
+        boxPositions = new Vector3Int[boxes.Count];
+        int i = 0;
+        foreach (var pos in boxes.Keys)
+            boxPositions[i++] = pos;
+
+        destroyedWallPositions = new Vector3Int[destroyedWalls.Count];
+        destroyedWallDirections = new int[destroyedWalls.Count];
+        for (int j = 0; j < destroyedWalls.Count; j++)
+        {
+            destroyedWallPositions[j] = destroyedWalls[j].pos;
+            destroyedWallDirections[j] = (int)destroyedWalls[j].dir;
+        }
+
+        var dmgPos = new List<Vector3Int>();
+        var dmgDir = new List<int>();
+        var dmgHp = new List<float>();
+        foreach (var wall in wallsByKey.Values)
+        {
+            if (wall == null) continue;
+            if (wall.Health < wall.MaxHealth)
+            {
+                dmgPos.Add(wall.GridPos);
+                dmgDir.Add((int)wall.Direction);
+                dmgHp.Add(wall.Health);
+            }
+        }
+        damagedWallPositions = dmgPos.ToArray();
+        damagedWallDirections = dmgDir.ToArray();
+        damagedWallHealth = dmgHp.ToArray();
+    }
+
+    public void ApplyServerWorldState(
+        Vector3Int[] boxPositions,
+        Vector3Int[] destroyedWallPositions,
+        int[] destroyedWallDirections,
+        Vector3Int[] damagedWallPositions,
+        int[] damagedWallDirections,
+        float[] damagedWallHealth)
+    {
+        if (boxPositions != null)
+        {
+            for (int i = 0; i < boxPositions.Length; i++)
+                Spawn(boxPositions[i]);
+        }
+
+        if (destroyedWallPositions != null && destroyedWallDirections != null)
+        {
+            int n = Mathf.Min(destroyedWallPositions.Length, destroyedWallDirections.Length);
+            for (int i = 0; i < n; i++)
+            {
+                if (TryGetWall(destroyedWallPositions[i], (WallNormalDirection)destroyedWallDirections[i], out var wall) && wall != null)
+                    wall.SetHealth(0f);
+            }
+        }
+
+        if (damagedWallPositions != null && damagedWallHealth != null && damagedWallDirections != null)
+        {
+            int n = Mathf.Min(damagedWallPositions.Length, Mathf.Min(damagedWallDirections.Length, damagedWallHealth.Length));
+            for (int i = 0; i < n; i++)
+            {
+                if (TryGetWall(damagedWallPositions[i], (WallNormalDirection)damagedWallDirections[i], out var wall) && wall != null)
+                    wall.SetHealth(damagedWallHealth[i]);
+            }
+        }
+    }
+
     private static long GetWallKey(Vector3Int pos, WallNormalDirection direction)
     {
         unchecked
@@ -282,7 +362,10 @@ public class WorldGenerator : MonoBehaviour
     {
         WallAboutToBeDestroyed?.Invoke(wall);
         wallBoxes.Remove(wall);
-        wallsByKey.Remove(GetWallKey(wallPos, direction));
+        long key = GetWallKey(wallPos, direction);
+        wallsByKey.Remove(key);
+        if (destroyedWallKeys.Add(key))
+            destroyedWalls.Add((wallPos, direction));
 
         GetAdjacentBoxPositions(wallPos, direction, out Vector3Int firstBoxPos, out Vector3Int secondBoxPos);
 
