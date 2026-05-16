@@ -7,9 +7,11 @@ public class PaintShooter : MonoBehaviour
     public int WallDamage = 1;
     public Paint Paint;
     public Bullet Bullet;
+    [SerializeField] private int _shotsPerSound = 1;
 
     private Collider _collider;
     private AudioSource _shootAudio;
+    private int _shotsSinceLastSound;
 
     private void Awake()
     {
@@ -42,9 +44,14 @@ public class PaintShooter : MonoBehaviour
                 var bullet = Instantiate(Bullet, spawnPos, Quaternion.identity);
                 bullet.Expand(scale);
                 bullet.Launch(dir, BulletSpeed);
-                //_shootAudio.volume = 0.2f + 0.2f * scale;
-                _shootAudio.pitch = Random.Range(0.95f - 0.1f * scale, 1.05f);
-                _shootAudio.Play();
+                _shotsSinceLastSound++;
+                if (_shootAudio != null && _shotsSinceLastSound >= Mathf.Max(1, _shotsPerSound))
+                {
+                    _shotsSinceLastSound = 0;
+                    //_shootAudio.volume = 0.2f + 0.2f * scale;
+                    _shootAudio.pitch = Random.Range(0.95f - 0.1f * scale, 1.05f);
+                    _shootAudio.Play();
+                }
                 if (IsLocalNetworkedPlayer(out var localNet))
                 {
                     localNet.RequestSpawnBulletServerRpc(spawnPos, dir, scale, BulletSpeed);
