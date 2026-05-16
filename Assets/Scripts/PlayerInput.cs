@@ -119,6 +119,7 @@ public class PlayerInput : MonoBehaviour
 
     private void OnGUI()
     {
+        if (EscapeMenu.IsOpen) return;
         float barHeight = 8f;
         float barWidth = 100f;
         float x = 0f;
