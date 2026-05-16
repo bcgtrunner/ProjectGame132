@@ -50,6 +50,12 @@ public class BotSpawner : MonoBehaviour
         return manhattan * 0.5f + 0.1f;
     }
 
+    private static float GetBossDifficulty()
+    {
+        int defeated = GameManager.Instance != null ? GameManager.Instance.BossesDefeated : 0;
+        return 0.35f + 0.3f * defeated;
+    }
+
     public void ResetState()
     {
         StopAllCoroutines();
@@ -83,7 +89,10 @@ public class BotSpawner : MonoBehaviour
             AIInput boss = Instantiate(bossPrefab, GetBotSpawnPosition(pos, 0), Quaternion.identity);
             boss.Target = _botTarget;
             var contr = boss.GetComponent<PlayerController>();
-            contr.SetMaxHp(GetBotHealth(pos) * contr.MaxHp);
+            float difficulty = GetBossDifficulty();
+            contr.SetMaxHp(GetBotHealth(pos) * contr.MaxHp * difficulty);
+            if (boss.TryGetComponent<SweepAttack>(out var sweep))
+                sweep.ApplyDifficulty(difficulty);
             boss.Destroyed += HandleBotDestroyed;
             _currentBoss = contr;
             _bots.Add(boss);
@@ -138,6 +147,7 @@ public class BotSpawner : MonoBehaviour
         if (botController == _currentBoss)
         {
             _currentBoss = null;
+            if (GameManager.Instance != null) GameManager.Instance.BossDefeated();
         }
 
         if (botController != null)
