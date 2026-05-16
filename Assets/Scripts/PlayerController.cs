@@ -20,6 +20,7 @@ public class PlayerController : MonoBehaviour
     private Collider _playerCollider;
     private bool _isPlayerControlled;
     private PlayerState _state = PlayerState.Attached;
+    private bool _hasSurfaceNormal;
     private Vector3 _flyingDirection;
     private Collider _attachedWallCollider;
     private Wall _attachedWall;
@@ -176,15 +177,17 @@ public class PlayerController : MonoBehaviour
         if (_state != PlayerState.Attached || IsTakeoffOnCooldown) return;
 
         Vector3 flyingDirection = direction.normalized;
-        if (Vector3.Dot(flyingDirection, -CurrentSurfaceNormal.normalized) > 0f)
+        if (_hasSurfaceNormal && Vector3.Dot(flyingDirection, -CurrentSurfaceNormal.normalized) > 0f)
         {
             return;
         }
 
         UnsubscribeFromWall();
         _flyingDirection = flyingDirection;
-        transform.position += CurrentSurfaceNormal.normalized * _launchClearance;
+        if (_hasSurfaceNormal)
+            transform.position += CurrentSurfaceNormal.normalized * _launchClearance;
         _attachedWallCollider = null;
+        _hasSurfaceNormal = false;
         ResolveWallOverlaps();
         _state = PlayerState.Flying;
     }
@@ -196,8 +199,19 @@ public class PlayerController : MonoBehaviour
             : Vector3.up;
         UnsubscribeFromWall();
         _attachedWallCollider = null;
+        _hasSurfaceNormal = true;
         _state = PlayerState.Attached;
         AttachedToWall?.Invoke(CurrentSurfaceNormal, transform.rotation);
+    }
+
+    public void SetFreeSpawnState()
+    {
+        UnsubscribeFromWall();
+        _attachedWallCollider = null;
+        _hasSurfaceNormal = false;
+        CurrentSurfaceNormal = Vector3.up;
+        _state = PlayerState.Attached;
+        AttachedToWall?.Invoke(Vector3.up, transform.rotation);
     }
 
     private void UpdateFlying()
@@ -236,6 +250,7 @@ public class PlayerController : MonoBehaviour
         {
             _attachedWall.Destroyed += OnWallDestroyed;
         }
+        _hasSurfaceNormal = true;
         _state = PlayerState.Attached;
     }
 
