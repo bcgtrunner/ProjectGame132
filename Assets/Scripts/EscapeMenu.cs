@@ -10,6 +10,8 @@ public class EscapeMenu : MonoBehaviour
     [SerializeField] private Button _quitButton;
     [SerializeField] private bool _freezeTime = false;
 
+    public static bool IsOpen { get; private set; }
+
     private bool _isOpen;
     private CursorLockMode _restoreLockState;
     private bool _restoreCursorVisible;
@@ -33,6 +35,7 @@ public class EscapeMenu : MonoBehaviour
     private void Open()
     {
         _isOpen = true;
+        IsOpen = true;
         if (_panel != null) _panel.SetActive(true);
         _restoreLockState = Cursor.lockState;
         _restoreCursorVisible = Cursor.visible;
@@ -44,6 +47,7 @@ public class EscapeMenu : MonoBehaviour
     private void Close()
     {
         _isOpen = false;
+        IsOpen = false;
         if (_panel != null) _panel.SetActive(false);
         Cursor.lockState = _restoreLockState;
         Cursor.visible = _restoreCursorVisible;
@@ -64,5 +68,6 @@ public class EscapeMenu : MonoBehaviour
     private void OnDisable()
     {
         if (_freezeTime && _isOpen) Time.timeScale = 1f;
+        if (_isOpen) IsOpen = false;
     }
 }
