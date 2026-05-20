@@ -9,6 +9,7 @@ public class BotSpawner : MonoBehaviour
     [SerializeField] private AIInput _botPrefab;
     [SerializeField] private PlayerController _botTarget;
     [SerializeField] private int _botsPerBox = 10;
+    [SerializeField] private int _maxActiveBots = 60;
     [SerializeField] private float _deathPaintScale = 1f;
     [SerializeField] private int _deathBurstFrames = 100;
 
@@ -53,7 +54,7 @@ public class BotSpawner : MonoBehaviour
     private static float GetBossDifficulty()
     {
         int defeated = GameManager.Instance != null ? GameManager.Instance.BossesDefeated : 0;
-        return 0.35f + 0.45f * defeated;
+        return Mathf.Min(0.60f + 0.35f * defeated, 3.0f);
     }
 
     public void ResetState()
@@ -101,7 +102,7 @@ public class BotSpawner : MonoBehaviour
             return;
         }
 
-        int botCount = GetBotCount(pos);
+        int botCount = Mathf.Min(GetBotCount(pos), Mathf.Max(0, _maxActiveBots - _bots.Count));
         _allBotsCleared = false;
         for (int i = 0; i < botCount; i++)
         {

@@ -10,7 +10,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _launchClearance = 0.1f;
     [SerializeField] private float _collisionSkin = 0.02f;
     [SerializeField] private float _maxHp = 6f;
-    [SerializeField] private float _healRate = 0.1f;
+    [SerializeField] private float _healRate = 0.3f;
     [SerializeField] private bool _launchOnWallDestroyed = false;
     private float _currentHp;
     private float _previousHp;

@@ -135,7 +135,7 @@ MonoBehaviour:
   _launchClearance: 0.02
   _collisionSkin: 0.02
   _maxHp: 100
-  _healRate: 0.1
+  _healRate: 0.3
   _launchOnWallDestroyed: 1
   _takeoffCooldownDuration: 0.35
   _hpFlashDuration: 0.4
