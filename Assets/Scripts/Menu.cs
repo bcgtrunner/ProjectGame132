@@ -24,6 +24,7 @@ public class Menu : MonoBehaviour
     [SerializeField] private TMP_InputField ipInput;
     [SerializeField] private TMP_Text ipText;
 
+    private TMP_InputField _nicknameInput;
     private List<string> ips = new();
     [SerializeField] private List<GameObject> connectButtons;
 
@@ -50,6 +51,25 @@ public class Menu : MonoBehaviour
         ipInput.onValueChanged.AddListener(ip => { if (NetUtils.IsIPCorrect(ip)) HostAddress = ip; });
         ipText.text = string.Join(' ', NetUtils.GetLocalIPAddress());
         InvokeRepeating("UpdateIPs", 0f, 0.5f);
+        CreateNicknameInput();
+    }
+
+    private void CreateNicknameInput()
+    {
+        if (ipInput == null) return;
+        var nickGO = Instantiate(ipInput.gameObject, ipInput.transform.parent);
+        nickGO.name = "NicknameInput";
+        var nickRect = nickGO.GetComponent<RectTransform>();
+        var ipRect = ipInput.GetComponent<RectTransform>();
+        nickRect.anchoredPosition = new Vector2(ipRect.anchoredPosition.x, ipRect.anchoredPosition.y + ipRect.rect.height + 8f);
+        _nicknameInput = nickGO.GetComponent<TMP_InputField>();
+        _nicknameInput.onValueChanged.RemoveAllListeners();
+        _nicknameInput.characterLimit = 20;
+        _nicknameInput.contentType = TMP_InputField.ContentType.Standard;
+        _nicknameInput.text = PlayerNickname.Value;
+        if (_nicknameInput.placeholder is TMP_Text placeholder)
+            placeholder.text = "Nickname";
+        _nicknameInput.onValueChanged.AddListener(val => PlayerNickname.Value = val);
     }
 
     void UpdateIPs()

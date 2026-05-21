@@ -10,6 +10,7 @@ public class MultiplayerStartup : MonoBehaviour
         if (NetworkManager.Singleton.IsServer)
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+        gameObject.AddComponent<NicknameHUD>();
     }
 
     private void OnDestroy()
