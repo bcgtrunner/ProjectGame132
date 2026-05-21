@@ -19,7 +19,7 @@ public class Broadcaster : MonoBehaviour
         udp.EnableBroadcast = true;
 
         endPoint = new IPEndPoint(IPAddress.Broadcast, port);
-        InvokeRepeating("Broadcast", 1f, 1f);
+        InvokeRepeating("Broadcast", 1f, 0.2f);
     }
 
     void Broadcast()
