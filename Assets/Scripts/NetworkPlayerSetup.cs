@@ -1,11 +1,23 @@
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(PlayerController))]
 public class NetworkPlayerSetup : NetworkBehaviour
 {
     public NetworkVariable<float> SyncedHp = new(
         0f,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner);
+
+    public NetworkVariable<FixedString64Bytes> Nickname = new(
+        default,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner);
+
+    public NetworkVariable<bool> NicknameHidden = new(
+        false,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Owner);
 
@@ -39,6 +51,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
         }
         _lastSentHp = controller.CurrentHp;
         SyncedHp.Value = controller.CurrentHp;
+        Nickname.Value = new FixedString64Bytes(PlayerNickname.Value);
         if (GameManager.Instance != null) GameManager.Instance.Player = controller;
 
         var camera = Camera.main;
@@ -77,6 +90,9 @@ public class NetworkPlayerSetup : NetworkBehaviour
             _lastSentHp = _controller.CurrentHp;
             SyncedHp.Value = _controller.CurrentHp;
         }
+
+        if (!EscapeMenu.IsOpen && Keyboard.current != null && Keyboard.current.leftShiftKey.wasPressedThisFrame)
+            NicknameHidden.Value = !NicknameHidden.Value;
     }
 
     [ServerRpc]
