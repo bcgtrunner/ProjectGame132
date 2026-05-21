@@ -87,6 +87,7 @@ public class Wall : MonoBehaviour
     public void SetDamageColor(Color color)
     {
         _damageColor = color;
+        UpdateColor();
     }
 
     public void SetHealth(float value)
