@@ -18,6 +18,8 @@ public class Menu : MonoBehaviour
     private string HostAddress = "192.168.0.104";
 
     [SerializeField] private Button playButton;
+    [SerializeField] private Button multiplayerButton;
+    [SerializeField] private GameObject multiplayerPanel;
     [SerializeField] private Button quitButton;
     [SerializeField] private Button hostButton;
     [SerializeField] private Button connectButton;
@@ -40,6 +42,7 @@ public class Menu : MonoBehaviour
                     Destroy(nm.gameObject);
             }
         }
+        multiplayerButton.onClick.AddListener(() => multiplayerPanel.SetActive(!multiplayerPanel.activeSelf));
     }
 
     private void Start()
@@ -81,8 +84,9 @@ public class Menu : MonoBehaviour
             button.SetActive(true);
             string ip = ips[i];
             button.GetComponentInChildren<TMP_Text>().text = "Connect to " + ip;
-            Debug.Log(i);
-            button.GetComponent<Button>().onClick.AddListener(() =>
+            var buttonComp = button.GetComponent<Button>();
+            buttonComp.enabled = true;
+            buttonComp.onClick.AddListener(() =>
             {
                 HostAddress = ip;
                 StartClient();
