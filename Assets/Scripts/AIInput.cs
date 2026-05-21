@@ -17,11 +17,8 @@ public class AIInput : MonoBehaviour
     [SerializeField] private float _shrapnelScale = 0.3f;
 
     [Header("Movement & AI Behavior")]
-    [Tooltip("��������� ������ ��� ����� ������������ � ����. ��� ���� ��������, ��� ������������ ��� ���� �����, ����������� ����� � ������.")]
     [SerializeField] private float _followStrength = 1.0f;
-    [Tooltip("������������ ���������, �� ������� ��� ����� ������������� �� ���� ������.")]
     [SerializeField] private float _maxTravelDistance = 10f;
-    [Tooltip("����������� ���������� HP �����, �� ������� ��� ���������� ��������.")]
     [SerializeField] private float _minWallHpThreshold = 2.0f;
 
     private PlayerController _controller;
