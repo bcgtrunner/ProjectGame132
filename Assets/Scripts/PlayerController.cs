@@ -17,6 +17,10 @@ public class PlayerController : MonoBehaviour
 
     private enum PlayerState { Attached, Flying }
 
+    [SerializeField] private AudioClip _landClip;
+    [SerializeField] private AudioClip _launchClip;
+    private AudioSource _audioSource;
+
     private Collider _playerCollider;
     private MeshRenderer _meshRenderer;
     private MaterialPropertyBlock _propertyBlock;
@@ -69,6 +73,7 @@ public class PlayerController : MonoBehaviour
         _currentHp = hp;
         _previousHp = hp;
         if (_meshRenderer != null) _meshRenderer.enabled = hp > 0f;
+        UpdateColor();
     }
 
     public void TakeDamage(float amount)
@@ -190,6 +195,7 @@ public class PlayerController : MonoBehaviour
     {
         _playerCollider = GetComponent<Collider>();
         _meshRenderer = GetComponent<MeshRenderer>();
+        _audioSource = GetComponent<AudioSource>();
         _propertyBlock = new MaterialPropertyBlock();
         if (_meshRenderer != null)
         {
@@ -334,6 +340,7 @@ public class PlayerController : MonoBehaviour
         ResolveWallOverlaps();
         _state = PlayerState.Flying;
         _hasEverLaunched = true;
+        if (_isPlayerControlled && _audioSource != null && _launchClip != null) _audioSource.PlayOneShot(_launchClip);
     }
 
     public void SetVirtualAttachment(Vector3 surfaceNormal)
@@ -407,6 +414,7 @@ public class PlayerController : MonoBehaviour
     private void Attach(RaycastHit hit)
     {
         _takeoffCooldown.Reset();
+        if (_isPlayerControlled && _audioSource != null && _landClip != null) _audioSource.PlayOneShot(_landClip);
         TeleportToSurface(hit);
         UnsubscribeFromWall();
         _attachedWallCollider = hit.collider;
