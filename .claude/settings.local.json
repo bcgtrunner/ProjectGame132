@@ -13,7 +13,8 @@
       "Bash(claude mcp *)",
       "Bash(Remove-Item *)",
       "Bash(xargs grep -l \"SweepAttack\\\\|boss\\\\|Boss\")",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(python3 *)"
     ]
   }
 }
