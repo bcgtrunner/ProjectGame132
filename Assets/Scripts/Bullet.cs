@@ -50,9 +50,9 @@ public class Bullet : MonoBehaviour
 
     private IEnumerator Expansion(float scale)
     {
-        float timeToExpand = 0.25f;
+        float timeToExpand = 0.15f;
         float t = 0f;
-        Vector3 initialScale = transform.localScale * 0.5f;
+        Vector3 initialScale = transform.localScale * 0.9f;
         transform.localScale = initialScale;
         Vector3 targetScale = initialScale * scale;
 
