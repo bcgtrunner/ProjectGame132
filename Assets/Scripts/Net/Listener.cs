@@ -24,7 +24,7 @@ public class LanListener : MonoBehaviour
 
     void OnReceive(System.IAsyncResult ar)
     {
-        if (NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsHost) return;
+        if (NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsHost) return;
         byte[] data = udp.EndReceive(ar, ref endpoint);
         string message = Encoding.UTF8.GetString(data);
 
