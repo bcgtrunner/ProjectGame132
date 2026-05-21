@@ -49,6 +49,15 @@ public class WorldGenerator : MonoBehaviour
     private readonly HashSet<long> destroyedWallKeys = new();
     private readonly List<(Vector3Int pos, WallNormalDirection dir)> destroyedWalls = new();
 
+    private struct PaintRecord
+    {
+        public Vector3 Point;
+        public Vector3 Normal;
+        public float Scale;
+        public Color Color;
+    }
+    private readonly Dictionary<long, List<PaintRecord>> _paintRecords = new();
+
     public IReadOnlyCollection<Vector3Int> BoxPositions => boxes.Keys;
 
     private Material _sharedWallMaterial;
@@ -72,6 +81,17 @@ public class WorldGenerator : MonoBehaviour
         BoxOpened?.Invoke(Vector3Int.zero, Vector3.zero);
     }
 
+    public void AddPaintRecord(Vector3 point, Vector3 normal, float scale, Color color, Vector3Int wallPos, int wallDir)
+    {
+        long key = GetWallKey(wallPos, (WallNormalDirection)wallDir);
+        if (!_paintRecords.TryGetValue(key, out var list))
+        {
+            list = new List<PaintRecord>();
+            _paintRecords[key] = list;
+        }
+        list.Add(new PaintRecord { Point = point, Normal = normal, Scale = scale, Color = color });
+    }
+
     public void Regenerate()
     {
         foreach (var paint in FindObjectsByType<Paint>(FindObjectsSortMode.None))
@@ -87,6 +107,7 @@ public class WorldGenerator : MonoBehaviour
         wallsByKey.Clear();
         destroyedWallKeys.Clear();
         destroyedWalls.Clear();
+        _paintRecords.Clear();
 
         if (BotSpawner.Instance != null)
             BotSpawner.Instance.ResetState();
@@ -291,7 +312,11 @@ public class WorldGenerator : MonoBehaviour
         out int[] destroyedWallDirections,
         out Vector3Int[] damagedWallPositions,
         out int[] damagedWallDirections,
-        out float[] damagedWallHealth)
+        out float[] damagedWallHealth,
+        out Vector3[] paintPoints,
+        out Vector3[] paintNormals,
+        out float[] paintScales,
+        out Color[] paintColors)
     {
         boxPositions = new Vector3Int[boxes.Count];
         int i = 0;
@@ -322,6 +347,23 @@ public class WorldGenerator : MonoBehaviour
         damagedWallPositions = dmgPos.ToArray();
         damagedWallDirections = dmgDir.ToArray();
         damagedWallHealth = dmgHp.ToArray();
+
+        int totalPaint = 0;
+        foreach (var list in _paintRecords.Values) totalPaint += list.Count;
+        paintPoints = new Vector3[totalPaint];
+        paintNormals = new Vector3[totalPaint];
+        paintScales = new float[totalPaint];
+        paintColors = new Color[totalPaint];
+        int k = 0;
+        foreach (var list in _paintRecords.Values)
+            foreach (var r in list)
+            {
+                paintPoints[k] = r.Point;
+                paintNormals[k] = r.Normal;
+                paintScales[k] = r.Scale;
+                paintColors[k] = r.Color;
+                k++;
+            }
     }
 
     public void ApplyServerWorldState(
@@ -378,6 +420,7 @@ public class WorldGenerator : MonoBehaviour
         wallsByKey.Remove(key);
         if (destroyedWallKeys.Add(key))
             destroyedWalls.Add((wallPos, direction));
+        _paintRecords.Remove(key);
 
         GetAdjacentBoxPositions(wallPos, direction, out Vector3Int firstBoxPos, out Vector3Int secondBoxPos);
 
