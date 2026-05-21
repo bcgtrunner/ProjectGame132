@@ -15,7 +15,7 @@ public class Menu : MonoBehaviour
     private const string MultiplayerSceneName = "Multiplayer";
     private const ushort Port = 7777;
 
-    private string HostAddress = "192.168.0.104";
+    private string HostAddress = "127.0.0.1";
 
     [SerializeField] private Button playButton;
     [SerializeField] private Button multiplayerButton;
