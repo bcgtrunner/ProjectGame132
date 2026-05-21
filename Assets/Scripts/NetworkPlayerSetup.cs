@@ -94,7 +94,11 @@ public class NetworkPlayerSetup : NetworkBehaviour
             out var destroyedWallDirections,
             out var damagedWallPositions,
             out var damagedWallDirections,
-            out var damagedWallHealth);
+            out var damagedWallHealth,
+            out var paintPoints,
+            out var paintNormals,
+            out var paintScales,
+            out var paintColors);
 
         var rpcParams = new ClientRpcParams
         {
@@ -107,6 +111,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
             damagedWallPositions,
             damagedWallDirections,
             damagedWallHealth,
+            paintPoints,
+            paintNormals,
+            paintScales,
+            paintColors,
             rpcParams);
     }
 
@@ -118,6 +126,10 @@ public class NetworkPlayerSetup : NetworkBehaviour
         Vector3Int[] damagedWallPositions,
         int[] damagedWallDirections,
         float[] damagedWallHealth,
+        Vector3[] paintPoints,
+        Vector3[] paintNormals,
+        float[] paintScales,
+        Color[] paintColors,
         ClientRpcParams rpcParams = default)
     {
         if (WorldGenerator.Instance == null) return;
@@ -128,6 +140,16 @@ public class NetworkPlayerSetup : NetworkBehaviour
             damagedWallPositions,
             damagedWallDirections,
             damagedWallHealth);
+
+        if (paintPoints == null || paintPoints.Length == 0) return;
+        var nm = NetworkManager.Singleton;
+        var local = nm != null ? nm.LocalClient?.PlayerObject : null;
+        if (local != null && local.TryGetComponent<PaintShooter>(out var shooter))
+        {
+            int n = Mathf.Min(paintPoints.Length, Mathf.Min(paintNormals.Length, Mathf.Min(paintScales.Length, paintColors.Length)));
+            for (int i = 0; i < n; i++)
+                shooter.SpawnPaintAt(paintPoints[i], paintNormals[i], paintScales[i], paintColors[i]);
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -185,6 +207,7 @@ public class NetworkPlayerSetup : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void RequestSpawnPaintAndDamageWallServerRpc(Vector3 point, Vector3 normal, float scale, Color color, Vector3Int wallPos, int direction, float amount)
     {
+        WorldGenerator.Instance?.AddPaintRecord(point, normal, scale, color, wallPos, direction);
         SpawnPaintAndDamageWallClientRpc(point, normal, scale, color, wallPos, direction, amount);
     }
 
