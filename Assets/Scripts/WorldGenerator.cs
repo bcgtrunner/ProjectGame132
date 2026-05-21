@@ -283,8 +283,6 @@ public class WorldGenerator : MonoBehaviour
             _cachedCubeMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
         filter.sharedMesh = _cachedCubeMesh;
 
-        wallObj.AddComponent<BoxCollider>();
-
         switch (direction)
         {
             case WallNormalDirection.X:
@@ -297,6 +295,8 @@ public class WorldGenerator : MonoBehaviour
                 wallObj.transform.localScale = new Vector3(Scale, Scale, wallWidth);
                 break;
         }
+
+        wallObj.AddComponent<BoxCollider>();
 
         return wall;
     }

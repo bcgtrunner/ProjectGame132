@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -157,15 +158,24 @@ public class NetworkPlayerSetup : NetworkBehaviour
             damagedWallDirections,
             damagedWallHealth);
 
-        if (paintPoints == null || paintPoints.Length == 0) return;
+        if (paintPoints != null && paintPoints.Length > 0)
+            StartCoroutine(SpawnPaintWhenReady(paintPoints, paintNormals, paintScales, paintColors));
+    }
+
+    private IEnumerator SpawnPaintWhenReady(Vector3[] points, Vector3[] normals, float[] scales, Color[] colors)
+    {
         var nm = NetworkManager.Singleton;
-        var local = nm != null ? nm.LocalClient?.PlayerObject : null;
-        if (local != null && local.TryGetComponent<PaintShooter>(out var shooter))
-        {
-            int n = Mathf.Min(paintPoints.Length, Mathf.Min(paintNormals.Length, Mathf.Min(paintScales.Length, paintColors.Length)));
-            for (int i = 0; i < n; i++)
-                shooter.SpawnPaintAt(paintPoints[i], paintNormals[i], paintScales[i], paintColors[i]);
-        }
+        while (nm != null && nm.LocalClient?.PlayerObject == null)
+            yield return null;
+
+        Physics.SyncTransforms();
+
+        var local = nm?.LocalClient?.PlayerObject;
+        if (local == null || !local.TryGetComponent<PaintShooter>(out var shooter)) yield break;
+
+        int n = Mathf.Min(points.Length, Mathf.Min(normals.Length, Mathf.Min(scales.Length, colors.Length)));
+        for (int i = 0; i < n; i++)
+            shooter.SpawnPaintAt(points[i], normals[i], scales[i], colors[i]);
     }
 
     [ServerRpc(RequireOwnership = false)]
