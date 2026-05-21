@@ -22,9 +22,24 @@ public class NetworkPlayerSetup : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Owner);
 
+    public NetworkVariable<int> Kills = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<int> Deaths = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    private const float AttackerCreditWindow = 5f;
+
     private PlayerController _controller;
     private MeshRenderer _meshRenderer;
     private float _lastSentHp;
+    private ulong _lastAttackerId;
+    private bool _hasLastAttacker;
+    private float _lastAttackerExpireTime;
 
     private void Awake()
     {
@@ -179,24 +194,60 @@ public class NetworkPlayerSetup : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void RequestDealDamageServerRpc(NetworkObjectReference targetRef, float amount)
+    public void RequestDealDamageServerRpc(NetworkObjectReference targetRef, float amount, ServerRpcParams rpcParams = default)
     {
         if (!targetRef.TryGet(out NetworkObject target)) return;
         if (!target.TryGetComponent<NetworkPlayerSetup>(out var targetSetup)) return;
+        ulong attackerId = rpcParams.Receive.SenderClientId;
 
-        var rpcParams = new ClientRpcParams
+        var clientParams = new ClientRpcParams
         {
             Send = new ClientRpcSendParams { TargetClientIds = new[] { target.OwnerClientId } }
         };
-        targetSetup.ApplyDamageClientRpc(amount, rpcParams);
+        targetSetup.ApplyDamageClientRpc(amount, attackerId, clientParams);
     }
 
     [ClientRpc]
-    public void ApplyDamageClientRpc(float amount, ClientRpcParams rpcParams = default)
+    public void ApplyDamageClientRpc(float amount, ulong attackerId, ClientRpcParams rpcParams = default)
     {
         if (!IsOwner) return;
+        SetLastAttacker(attackerId);
         if (TryGetComponent<PlayerController>(out var pc))
             pc.TakeDamage(amount);
+    }
+
+    public void SetLastAttacker(ulong attackerId)
+    {
+        if (attackerId == OwnerClientId) return;
+        _lastAttackerId = attackerId;
+        _hasLastAttacker = true;
+        _lastAttackerExpireTime = Time.time + AttackerCreditWindow;
+    }
+
+    public bool TryGetActiveAttacker(out ulong attackerId)
+    {
+        attackerId = _lastAttackerId;
+        if (!_hasLastAttacker) return false;
+        if (Time.time > _lastAttackerExpireTime) return false;
+        if (attackerId == OwnerClientId) return false;
+        return true;
+    }
+
+    [ServerRpc]
+    public void ReportDeathServerRpc(ulong killerClientId, bool hasKiller)
+    {
+        Deaths.Value = Deaths.Value + 1;
+
+        if (!hasKiller) return;
+        if (killerClientId == OwnerClientId) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+        if (!nm.ConnectedClients.TryGetValue(killerClientId, out var killer)) return;
+        if (killer.PlayerObject == null) return;
+        if (!killer.PlayerObject.TryGetComponent<NetworkPlayerSetup>(out var killerSetup)) return;
+
+        killerSetup.Kills.Value = killerSetup.Kills.Value + 1;
     }
 
     [ClientRpc]

@@ -98,7 +98,14 @@ public class PlayerController : MonoBehaviour
             {
                 var nm = Unity.Netcode.NetworkManager.Singleton;
                 if (nm != null && nm.IsListening)
+                {
+                    if (TryGetComponent<NetworkPlayerSetup>(out var setup) && setup.IsSpawned)
+                    {
+                        bool hasKiller = setup.TryGetActiveAttacker(out ulong killerId);
+                        setup.ReportDeathServerRpc(killerId, hasKiller);
+                    }
                     BeginRespawn();
+                }
                 else
                     GameManager.Instance.Restart();
             }
