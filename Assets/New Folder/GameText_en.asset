@@ -42,6 +42,16 @@ MonoBehaviour:
     m_Localized: Quit to Menu
     m_Metadata:
       m_Items: []
+  - m_Id: 16076712988672
+    m_Localized: Guide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16135684902912
+    m_Localized: "Click RMB to move to the specified point\n\nLMB (press) \u2014
+      single shot\n\nMouse wheel \u2014 firing bursts\n\nPay attention to the walls
+      \u2014 they are collapsing."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
